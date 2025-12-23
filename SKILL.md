@@ -156,6 +156,43 @@ find docs/learnings -name "*.md" -mtime -7
 
 ---
 
+## Auto-Capture
+
+บันทึก session อัตโนมัติเมื่อจบงาน
+
+### Options
+
+| Option | Command | Trigger |
+|--------|---------|---------|
+| Hooks | - | Auto on session stop |
+| Wrapper | `claude` (alias) | Interactive prompt |
+| AI-Powered | `./scripts/ai-capture.sh` | Manual with AI analysis |
+
+### Setup (Hooks - Recommended)
+
+```bash
+# Add to ~/.claude/settings.json
+{
+  "hooks": {
+    "Stop": [{
+      "matcher": "",
+      "hooks": [{
+        "type": "command",
+        "command": "~/.claude/skills/knowledge-management/scripts/auto-capture.sh . 2>/dev/null || true"
+      }]
+    }]
+  }
+}
+```
+
+### Output
+
+`docs/auto-captured/YYYY-MM/DD/HH.MM_session-*.md`
+
+See `AUTO-CAPTURE.md` for full documentation.
+
+---
+
 ## References
 
 - `references/mem-template.md` - Full /mem template

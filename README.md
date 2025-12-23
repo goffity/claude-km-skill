@@ -9,6 +9,7 @@
 - 🔍 **Searchable**: ค้นหาด้วย grep, type filter
 - 📁 **Git-Tracked**: Version control ทุก knowledge
 - 🔧 **Portable**: ใช้ได้กับทุก AI tool ที่อ่าน markdown
+- 🤖 **Auto-Capture**: บันทึก session อัตโนมัติ พร้อม AI analysis
 
 ## Quick Start
 
@@ -173,12 +174,54 @@ knowledge-management-skill/
 
 | Feature | Claude-Mem | This Skill |
 |---------|------------|------------|
-| Auto-capture | ✅ Automatic | ❌ Manual trigger |
+| Auto-capture | ✅ Automatic | ✅ Hooks/Wrapper/AI |
 | Git tracked | ❌ | ✅ |
 | Portable | ❌ Claude Code only | ✅ Any tool |
 | Editable | Limited | ✅ Full control |
 | Structure | Fixed | ✅ Customizable |
 | Dependency | Plugin required | ✅ Just markdown |
+
+## Auto-Capture
+
+บันทึก session อัตโนมัติเมื่อจบงาน - 3 options:
+
+### Option 1: Hooks (Recommended)
+
+```bash
+# Add to ~/.claude/settings.json
+{
+  "hooks": {
+    "Stop": [{
+      "matcher": "",
+      "hooks": [{
+        "type": "command",
+        "command": "~/.claude/skills/knowledge-management/scripts/auto-capture.sh . 2>/dev/null || true"
+      }]
+    }]
+  }
+}
+```
+
+### Option 2: Wrapper
+
+```bash
+# Add alias
+alias claude='~/.claude/skills/knowledge-management/scripts/claude-wrap.sh'
+
+# Usage - shows summary and asks to capture
+claude
+```
+
+### Option 3: AI-Powered
+
+```bash
+export ANTHROPIC_API_KEY='your-key'
+./scripts/ai-capture.sh .
+```
+
+**Output**: `docs/auto-captured/YYYY-MM/DD/HH.MM_session-*.md`
+
+See [AUTO-CAPTURE.md](AUTO-CAPTURE.md) for full documentation.
 
 ## Contributing
 
