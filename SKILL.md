@@ -1,6 +1,6 @@
 ---
 name: knowledge-management
-description: 4-layer knowledge capture system for development sessions. Use when user says /mem (quick capture), /distill (extract patterns), /td (post-task retrospective with Before/After context), or /improve (work on pending items). Manages docs/learnings/, docs/knowledge-base/, and docs/retrospective/ directories.
+description: 4-layer knowledge capture system for development sessions. Use when user says /mem (quick capture), /distill (extract patterns), /td (post-task retrospective with Before/After context), /improve (work on pending items), or /commit (atomic commits via TDG). Manages docs/learnings/, docs/knowledge-base/, and docs/retrospective/ directories.
 ---
 
 # Knowledge Management System
@@ -15,6 +15,7 @@ description: 4-layer knowledge capture system for development sessions. Use when
 | `/distill [topic]` | 2 | `docs/knowledge-base/[topic].md` | 3+ learnings on same topic |
 | `/td` | 3 | `docs/retrospective/YYYY-MM/retrospective_*.md` | Task completed |
 | `/improve` | 4 | Implementation | Work on pending items |
+| `/commit` | - | Git commits | Atomic commits via TDG |
 
 ## Flow
 
@@ -120,6 +121,22 @@ TZ='Asia/Bangkok' date '+%Y-%m/%d/%H.%M'  # Path format
 | Decision | Options Considered | Chosen | Rationale |
 |----------|-------------------|--------|-----------|
 ```
+
+---
+
+## Command: /commit
+
+**Atomic commits** via TDG plugin
+
+**Delegates to**: `/tdg:atomic-commit` from https://github.com/chanwit/tdg
+
+**What it does**:
+- Analyzes staged/unstaged changes
+- Detects mixed concerns (multiple unrelated changes)
+- Helps create clean, focused atomic commits
+- Each commit is a complete unit of work
+
+**Usage**: Simply run `/commit` and it will invoke TDG's atomic-commit skill.
 
 ---
 
