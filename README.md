@@ -46,6 +46,7 @@ cp ~/.claude/skills/knowledge-management-skill/assets/commands/*.md .claude/comm
 | `/distill [topic]` | 2 | Extract patterns | `docs/knowledge-base/[topic].md` |
 | `/td` | 3 | Post-task retrospective | `docs/retrospective/YYYY-MM/retrospective_*.md` |
 | `/improve` | 4 | Work on pending items | Implementation |
+| `/commit` | - | Atomic commits via TDG | Git commits |
 
 ## Workflow
 
@@ -121,7 +122,8 @@ project/
 │       ├── mem.md
 │       ├── distill.md
 │       ├── td.md
-│       └── improve.md
+│       ├── improve.md
+│       └── commit.md
 └── docs/
     ├── learnings/           # Layer 1: Quick capture
     │   └── YYYY-MM/
