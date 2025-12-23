@@ -197,12 +197,14 @@ knowledge-management-skill/
       "matcher": "",
       "hooks": [{
         "type": "command",
-        "command": "~/.claude/skills/knowledge-management/scripts/auto-capture.sh . 2>/dev/null || true"
+        "command": "[ ! -f docs/retrospective/$(date +%Y-%m)/retrospective_$(date +%Y-%m-%d)_*.md ] && ~/.claude/skills/knowledge-management/scripts/auto-capture.sh . 2>/dev/null || true"
       }]
     }]
   }
 }
 ```
+
+> Note: Duplicate check prevents multiple captures on the same day.
 
 ### Option 2: Wrapper
 
