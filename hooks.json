@@ -1,6 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/anthropics/claude-code/main/schemas/hooks.schema.json",
-  "description": "Claude Code hooks for Knowledge Management auto-capture",
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "hooks": {
     "Stop": [
       {
@@ -12,53 +11,6 @@
           }
         ]
       }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "# Optional: Track significant bash commands for session context"
-          }
-        ]
-      }
     ]
-  },
-  "installation": {
-    "instructions": [
-      "1. Copy this file to your project: cp hooks.json .claude/hooks.json",
-      "2. Or merge with existing hooks in ~/.claude/settings.json",
-      "3. Claude Code will automatically run auto-capture on session stop"
-    ],
-    "settings_example": {
-      "hooks": {
-        "Stop": [
-          {
-            "matcher": "",
-            "hooks": [
-              {
-                "type": "command",
-                "command": "~/.claude/skills/knowledge-management/scripts/auto-capture.sh . 2>/dev/null || true"
-              }
-            ]
-          }
-        ]
-      }
-    }
-  },
-  "variants": {
-    "basic": {
-      "description": "Basic auto-capture without AI",
-      "command": "~/.claude/skills/knowledge-management/scripts/auto-capture.sh . 2>/dev/null || true"
-    },
-    "ai_powered": {
-      "description": "AI-powered capture (requires ANTHROPIC_API_KEY)",
-      "command": "~/.claude/skills/knowledge-management/scripts/ai-capture.sh . 2>/dev/null || true"
-    },
-    "conditional": {
-      "description": "Only capture if 5+ files changed",
-      "command": "[ $(git diff --name-only HEAD 2>/dev/null | wc -l) -ge 5 ] && ~/.claude/skills/knowledge-management/scripts/auto-capture.sh . --force 2>/dev/null || true"
-    }
   }
 }
