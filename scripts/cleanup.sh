@@ -11,7 +11,7 @@
 #   --all            Clean all targets (auto-captured, learnings with status:draft)
 #   -h, --help       Show this help message
 
-set -e
+set -euo pipefail
 
 # Default configuration
 RETENTION_DAYS=30
@@ -63,6 +63,24 @@ EOF
 while [[ $# -gt 0 ]]; do
     case $1 in
         --days)
+            if [[ -z "${2:-}" ]]; then
+                echo -e "${RED}Error: --days requires an argument.${NC}"
+                show_help
+                exit 1
+            fi
+
+            if ! [[ "$2" =~ ^[0-9]+$ ]]; then
+                echo -e "${RED}Error: --days value must be a positive integer. Got: '$2'${NC}"
+                show_help
+                exit 1
+            fi
+
+            if [[ "$2" -le 0 ]]; then
+                echo -e "${RED}Error: --days value must be greater than zero. Got: '$2'${NC}"
+                show_help
+                exit 1
+            fi
+
             RETENTION_DAYS="$2"
             shift 2
             ;;
@@ -75,7 +93,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --target)
-            TARGET_DIR="$2"
+            TARGET_DIR="${2:-}"
             shift 2
             ;;
         --all)
@@ -106,7 +124,6 @@ export TZ
 
 # Calculate cutoff date
 CUTOFF_DATE=$(date -v-${RETENTION_DAYS}d '+%Y-%m-%d' 2>/dev/null || date -d "-${RETENTION_DAYS} days" '+%Y-%m-%d')
-CUTOFF_TIMESTAMP=$(date -v-${RETENTION_DAYS}d '+%s' 2>/dev/null || date -d "-${RETENTION_DAYS} days" '+%s')
 
 echo -e "${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║           Retention Policy Cleanup                         ║${NC}"
@@ -118,32 +135,65 @@ echo -e "📦 Archive: ${GREEN}$ARCHIVE_ENABLED${NC}"
 echo -e "🔍 Dry run: ${GREEN}$DRY_RUN${NC}"
 echo ""
 
+# Convert a YYYY-MM-DD date string to a Unix timestamp (seconds since epoch)
+date_to_ts() {
+    local date_str="$1"
+    local ts
+
+    # Try BSD/macOS date syntax first
+    if ts=$(date -j -f '%Y-%m-%d' "$date_str" +%s 2>/dev/null); then
+        echo "$ts"
+        return 0
+    fi
+
+    # Fallback to GNU date syntax
+    if ts=$(date -d "$date_str" +%s 2>/dev/null); then
+        echo "$ts"
+        return 0
+    fi
+
+    # If parsing fails, return empty and non-zero status
+    return 1
+}
+
 # Function to get file date from path (YYYY-MM/DD format)
 get_file_date() {
     local filepath="$1"
     # Extract YYYY-MM/DD from path
-    local year_month=$(echo "$filepath" | grep -oE '[0-9]{4}-[0-9]{2}' | tail -1)
-    local day=$(echo "$filepath" | grep -oE '/[0-9]{2}/' | tail -1 | tr -d '/')
+    local year_month day
+
+    year_month=$(echo "$filepath" | grep -oE '[0-9]{4}-[0-9]{2}' | tail -1) || true
+    day=$(echo "$filepath" | grep -oE '/[0-9]{2}/' | tail -1 | tr -d '/') || true
 
     if [[ -n "$year_month" && -n "$day" ]]; then
         echo "${year_month}-${day}"
     else
         # Fallback to file modification time
-        stat -f '%Sm' -t '%Y-%m-%d' "$filepath" 2>/dev/null || stat -c '%y' "$filepath" 2>/dev/null | cut -d' ' -f1
+        stat -f '%Sm' -t '%Y-%m-%d' "$filepath" 2>/dev/null || stat -c '%y' "$filepath" 2>/dev/null | cut -d' ' -f1 || true
     fi
 }
 
 # Function to check if file is older than cutoff
 is_old_file() {
     local filepath="$1"
-    local file_date=$(get_file_date "$filepath")
+    local file_date file_ts cutoff_ts
+
+    file_date=$(get_file_date "$filepath")
 
     if [[ -z "$file_date" ]]; then
         return 1  # Can't determine date, don't delete
     fi
 
-    # Compare dates
-    if [[ "$file_date" < "$CUTOFF_DATE" ]]; then
+    # Convert dates to timestamps for reliable comparison
+    if ! file_ts=$(date_to_ts "$file_date"); then
+        return 1  # Can't parse file date, don't delete
+    fi
+    if ! cutoff_ts=$(date_to_ts "$CUTOFF_DATE"); then
+        return 1  # Can't parse cutoff date, don't delete
+    fi
+
+    # Compare timestamps
+    if (( file_ts < cutoff_ts )); then
         return 0  # File is old
     else
         return 1  # File is recent
@@ -160,7 +210,8 @@ is_draft_learning() {
     fi
 
     # Check for Distilled marker (means it's been processed)
-    if grep -q 'Distilled:' "$filepath" 2>/dev/null; then
+    # Limit search to first 50 lines for efficiency
+    if head -50 "$filepath" 2>/dev/null | grep -q 'Distilled:'; then
         return 1  # Already distilled, don't delete
     fi
 
@@ -168,6 +219,7 @@ is_draft_learning() {
 }
 
 # Function to create archive
+# Returns 0 on success, 1 on failure
 create_archive() {
     local source_dir="$1"
     local archive_name="$2"
@@ -185,10 +237,16 @@ create_archive() {
     if [[ "$DRY_RUN" == "true" ]]; then
         echo -e "  ${YELLOW}[DRY-RUN]${NC} Would create archive: $archive_path"
         echo -e "  ${YELLOW}[DRY-RUN]${NC} Files to archive: ${#files[@]}"
+        return 0
     else
-        # Create archive
-        tar -czf "$archive_path" -C "$PROJECT_ROOT" "${files[@]/#$PROJECT_ROOT\//}" 2>/dev/null
-        echo -e "  ${GREEN}✓${NC} Created archive: $archive_path"
+        # Create archive with error handling
+        if tar -czf "$archive_path" -C "$PROJECT_ROOT" "${files[@]/#$PROJECT_ROOT\//}" 2>/dev/null; then
+            echo -e "  ${GREEN}✓${NC} Created archive: $archive_path"
+            return 0
+        else
+            echo -e "  ${RED}✗${NC} Failed to create archive: $archive_path" >&2
+            return 1
+        fi
     fi
 }
 
@@ -230,7 +288,7 @@ process_directory() {
             relative_path="${file#$PROJECT_ROOT/}"
             echo -e "  ${RED}×${NC} $relative_path ${YELLOW}($file_date)${NC}"
         fi
-    done < <(find "$full_path" -type f -name "*.md" -print0 2>/dev/null)
+    done < <(find "$full_path" -type f -name "*.md" -print0 2>/dev/null || true)
 
     # Summary for this target
     echo ""
@@ -238,6 +296,7 @@ process_directory() {
         echo -e "  ${GREEN}✓${NC} No old files found"
     else
         # Convert size to human readable
+        local size_human
         if [[ $total_size -gt 1048576 ]]; then
             size_human="$((total_size / 1048576)) MB"
         elif [[ $total_size -gt 1024 ]]; then
@@ -250,22 +309,28 @@ process_directory() {
         echo -e "  💾 Space to free: ${GREEN}$size_human${NC}"
 
         # Archive if enabled
+        local archive_success=true
         if [[ "$ARCHIVE_ENABLED" == "true" && $file_count -gt 0 ]]; then
             archive_name="archive_${target//\//_}_$(date '+%Y%m%d_%H%M%S')"
-            create_archive "$full_path" "$archive_name" "${old_files[@]}"
+            if ! create_archive "$full_path" "$archive_name" "${old_files[@]}"; then
+                archive_success=false
+                echo -e "  ${RED}⚠️  Skipping deletion due to archive failure${NC}"
+            fi
         fi
 
-        # Delete files
-        if [[ "$DRY_RUN" == "true" ]]; then
-            echo -e "  ${YELLOW}[DRY-RUN]${NC} Would delete $file_count files"
-        else
-            for file in "${old_files[@]}"; do
-                rm "$file"
-            done
-            echo -e "  ${GREEN}✓${NC} Deleted $file_count files"
+        # Delete files only if archive succeeded (or archiving was disabled)
+        if [[ "$archive_success" == "true" ]]; then
+            if [[ "$DRY_RUN" == "true" ]]; then
+                echo -e "  ${YELLOW}[DRY-RUN]${NC} Would delete $file_count files"
+            else
+                for file in "${old_files[@]}"; do
+                    rm "$file"
+                done
+                echo -e "  ${GREEN}✓${NC} Deleted $file_count files"
 
-            # Clean up empty directories
-            find "$full_path" -type d -empty -delete 2>/dev/null || true
+                # Clean up empty directories
+                find "$full_path" -type d -empty -delete 2>/dev/null || true
+            fi
         fi
     fi
 
@@ -278,20 +343,20 @@ TOTAL_DELETED=0
 
 if [[ "$CLEAN_ALL" == "true" ]]; then
     # Process all targets
-    process_directory "docs/auto-captured" "false"
+    process_directory "docs/auto-captured" "false" || true
     TOTAL_DELETED=$((TOTAL_DELETED + $?))
 
-    process_directory "docs/learnings" "true"
+    process_directory "docs/learnings" "true" || true
     TOTAL_DELETED=$((TOTAL_DELETED + $?))
 
 elif [[ -n "$TARGET_DIR" ]]; then
     # Process specific target
-    process_directory "$TARGET_DIR" "false"
+    process_directory "$TARGET_DIR" "false" || true
     TOTAL_DELETED=$?
 
 else
     # Default: process auto-captured only
-    process_directory "docs/auto-captured" "false"
+    process_directory "docs/auto-captured" "false" || true
     TOTAL_DELETED=$?
 fi
 
