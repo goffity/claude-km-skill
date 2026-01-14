@@ -164,9 +164,11 @@ EOF
 ISSUE_NUMBER=[issue-number-from-step-5]
 
 # Auto-assign to current user (silently skip on error)
-gh issue edit "$ISSUE_NUMBER" --add-assignee @me 2>/dev/null || true
-
-echo "✓ Assigned issue #$ISSUE_NUMBER to you"
+if gh issue edit "$ISSUE_NUMBER" --add-assignee @me 2>/dev/null; then
+    echo "✓ Assigned issue #$ISSUE_NUMBER to you"
+else
+    echo "→ Auto-assign skipped (already assigned or no permission)"
+fi
 ```
 
 **Edge Cases Handled:**
