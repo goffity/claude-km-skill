@@ -17,7 +17,6 @@ RUN_ONCE=false
 REPO=""
 STATE_FILE="${HOME}/.pr-review-state.json"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-NOTIFY_SCRIPT="${SCRIPT_DIR}/notify.sh"
 
 # Colors for output
 RED='\033[0;31m'
@@ -25,6 +24,15 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
+
+# Sanitize string for AppleScript (escape quotes and backslashes)
+sanitize_for_applescript() {
+    local str="$1"
+    # Escape backslashes first, then double quotes
+    str="${str//\\/\\\\}"
+    str="${str//\"/\\\"}"
+    echo "$str"
+}
 
 # Help message
 show_help() {
@@ -130,15 +138,21 @@ send_notification() {
     # Add suggestion to run /pr-review
     message="${message}. Run /pr-review to respond."
 
+    # Sanitize strings for shell safety
+    local safe_title safe_message safe_pr_title
+    safe_title=$(sanitize_for_applescript "$title")
+    safe_message=$(sanitize_for_applescript "$message")
+    safe_pr_title=$(sanitize_for_applescript "$pr_title")
+
     # Use osascript for macOS notification
-    osascript -e "display notification \"$message\" with title \"$title\" sound name \"$sound\"" 2>/dev/null || true
+    osascript -e "display notification \"$safe_message\" with title \"$safe_title\" sound name \"$sound\"" 2>/dev/null || true
 
     # Also use terminal-notifier if available
     if command -v terminal-notifier &> /dev/null; then
         terminal-notifier \
-            -title "$title" \
-            -subtitle "$pr_title" \
-            -message "$message" \
+            -title "$safe_title" \
+            -subtitle "$safe_pr_title" \
+            -message "$safe_message" \
             -sound "$sound" \
             -group "pr-review-$pr_number" \
             -activate "com.apple.Terminal" 2>/dev/null || true
@@ -203,8 +217,10 @@ check_prs() {
     local open_pr_numbers
     open_pr_numbers=$(echo "$prs" | jq -r '.number' | tr '\n' ',' | sed 's/,$//')
 
-    # Process each PR
-    echo "$prs" | jq -c '.' | while read -r pr; do
+    # Process each PR (use process substitution to avoid subshell)
+    while read -r pr; do
+        [[ -z "$pr" ]] && continue
+
         local pr_number pr_title
         pr_number=$(echo "$pr" | jq -r '.number')
         pr_title=$(echo "$pr" | jq -r '.title')
@@ -244,7 +260,7 @@ check_prs() {
 
             update_pr_state "$pr_number" "$latest_review_id" "$comment_count" "$review_decision"
         fi
-    done
+    done < <(echo "$prs" | jq -c '.')
 
     # Cleanup state for closed PRs
     if [[ -n "$open_pr_numbers" ]]; then

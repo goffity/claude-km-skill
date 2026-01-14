@@ -52,7 +52,7 @@ if [[ -f "$PID_FILE" ]]; then
 fi
 
 # Parse arguments and pass to poll script
-ARGS=""
+ARGS=()
 while [[ $# -gt 0 ]]; do
     case $1 in
         -h|--help)
@@ -60,7 +60,7 @@ while [[ $# -gt 0 ]]; do
             exit 0
             ;;
         *)
-            ARGS="$ARGS $1"
+            ARGS+=("$1")
             shift
             ;;
     esac
@@ -69,7 +69,7 @@ done
 # Start daemon in background
 echo -e "${GREEN}Starting PR Review Polling Daemon...${NC}"
 
-nohup "$POLL_SCRIPT" $ARGS >> "$LOG_FILE" 2>&1 &
+nohup "$POLL_SCRIPT" "${ARGS[@]}" >> "$LOG_FILE" 2>&1 &
 daemon_pid=$!
 
 # Save PID
