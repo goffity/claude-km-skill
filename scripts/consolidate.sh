@@ -33,7 +33,12 @@ NC='\033[0m'
 # Temp directory for intermediate data
 TEMP_DIR=""
 cleanup_temp() {
-    [[ -n "$TEMP_DIR" ]] && [[ -d "$TEMP_DIR" ]] && rm -rf "$TEMP_DIR"
+    # Safely remove temp directory only if it's under /tmp or /var/folders (macOS)
+    if [[ -n "$TEMP_DIR" ]] && [[ -d "$TEMP_DIR" ]]; then
+        if [[ "$TEMP_DIR" == /tmp/* ]] || [[ "$TEMP_DIR" == /var/folders/* ]]; then
+            rm -r "$TEMP_DIR" 2>/dev/null || true
+        fi
+    fi
 }
 trap cleanup_temp EXIT
 
@@ -98,6 +103,10 @@ while [[ $# -gt 0 ]]; do
         --overlap)
             if [[ -z "${2:-}" ]] || ! [[ "$2" =~ ^[0-9]+$ ]]; then
                 echo -e "${RED}Error: --overlap requires positive integer (0-100)${NC}"
+                exit 1
+            fi
+            if [[ "$2" -gt 100 ]]; then
+                echo -e "${RED}Error: --overlap must be 0-100${NC}"
                 exit 1
             fi
             OVERLAP_THRESHOLD="$2"
@@ -265,9 +274,11 @@ calc_overlap() {
         return
     fi
 
-    # Convert to arrays
-    local arr1=($files1)
-    local arr2=($files2)
+    # Convert to arrays safely (avoid glob expansion)
+    local -a arr1
+    local -a arr2
+    read -ra arr1 <<< "$files1"
+    read -ra arr2 <<< "$files2"
     local common=0
 
     for f1 in "${arr1[@]}"; do
