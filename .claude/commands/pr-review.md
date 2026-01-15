@@ -376,9 +376,9 @@ get_thread_id() {
             }
         ' -f owner="$owner" -f repo="$repo" -F pr="$pr_number" $cursor_arg)
 
-        # Accumulate threads
-        local page_threads=$(echo "$result" | jq '.data.repository.pullRequest.reviewThreads.nodes')
-        all_threads=$(echo "$all_threads $page_threads" | jq -s 'add')
+        # Accumulate threads with null-safe handling
+        local page_threads=$(echo "$result" | jq '.data.repository.pullRequest.reviewThreads.nodes // []')
+        all_threads=$(jq -n --argjson all "$all_threads" --argjson page "$page_threads" '$all + $page')
 
         # Check for more pages
         local has_next=$(echo "$result" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.hasNextPage')
@@ -620,6 +620,8 @@ git commit -m "fix: address Copilot review comments"
 resolve_all_copilot_threads() {
     local pr_number="$1"
     local cursor=""
+    local owner="${REPO%%/*}"
+    local repo="${REPO##*/}"
 
     while true; do
         local cursor_arg=""

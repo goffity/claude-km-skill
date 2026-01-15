@@ -316,9 +316,21 @@ check_copilot_pending_comments() {
     local owner="${REPO%%/*}"
     local repo="${REPO##*/}"
 
+    local result=""
+
     # Paginate through all review threads
-    while [[ "$has_next_page" == "true" ]]; do
-        local result
+    while true; do
+        # Safety checks to prevent infinite pagination loops
+        if [[ "$has_next_page" != "true" ]]; then
+            break
+        fi
+
+        # If the API reports hasNextPage=true but gives a null/empty cursor
+        # after at least one request, stop to avoid re-fetching the first page.
+        if [[ -n "$result" && ( -z "$cursor" || "$cursor" == "null" ) ]]; then
+            break
+        fi
+
         local cursor_arg=""
 
         # Add cursor argument if we have one (not first page)
@@ -366,14 +378,9 @@ check_copilot_pending_comments() {
         # Accumulate total
         total_count=$((total_count + page_count))
 
-        # Get pagination info
+        # Get pagination info for next iteration's safety checks
         has_next_page=$(echo "$result" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.hasNextPage // "false"' 2>/dev/null) || has_next_page="false"
         cursor=$(echo "$result" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.endCursor // "null"' 2>/dev/null) || cursor="null"
-
-        # Safety: break if cursor is null/empty
-        if [[ -z "$cursor" || "$cursor" == "null" ]]; then
-            break
-        fi
     done
 
     echo "$total_count"
