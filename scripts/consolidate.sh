@@ -214,11 +214,34 @@ extract_files_changed() {
     echo "$files" | xargs
 }
 
-# Convert HH.MM to minutes since midnight
+# Convert HH.MM (or HH) to minutes since midnight
 time_to_minutes() {
     local time="$1"
-    local hours="${time%%.*}"
-    local minutes="${time#*.}"
+    local hours
+    local minutes
+
+    # Handle empty or unset time defensively
+    if [[ -z "${time:-}" ]]; then
+        echo 0
+        return 0
+    fi
+
+    # If time contains a dot, split into hours and minutes, otherwise assume whole string is hours
+    if [[ "$time" == *.* ]]; then
+        hours="${time%%.*}"
+        minutes="${time#*.}"
+    else
+        hours="$time"
+        minutes="0"
+    fi
+
+    # Validate that hours and minutes are non-empty and numeric
+    if [[ -z "$hours" || -z "$minutes" || ! "$hours" =~ ^[0-9]+$ || ! "$minutes" =~ ^[0-9]+$ ]]; then
+        # Fallback to 0 minutes on malformed time to avoid arithmetic errors
+        echo 0
+        return 0
+    fi
+
     hours=$((10#$hours))
     minutes=$((10#$minutes))
     echo $((hours * 60 + minutes))
@@ -226,15 +249,21 @@ time_to_minutes() {
 
 # Parse all session files
 echo -e "${BLUE}Parsing session files...${NC}"
-idx=0
 for session_file in "${SESSION_FILES[@]}"; do
     filename=$(basename "$session_file")
+
+    # Validate filename format: expect HH.MM_* (e.g., 09.30_topic.md)
+    time_part="${filename%%_*}"
+    if [[ "$filename" != *_* ]] || ! [[ "$time_part" =~ ^([01][0-9]|2[0-3])\.[0-5][0-9]$ ]]; then
+        echo -e "${YELLOW}Skipping file with unexpected name format (expected HH.MM_*):${NC} $filename" >&2
+        continue
+    fi
+
     session_id="${filename%.md}"
     SESSION_IDS+=("$session_id")
     SESSION_PATHS+=("$session_file")
 
-    # Extract time from filename
-    time_part="${filename%%_*}"
+    # Extract time from filename (already validated above)
     SESSION_TIMES_MIN+=("$(time_to_minutes "$time_part")")
 
     # Extract issues and files
@@ -246,8 +275,6 @@ for session_file in "${SESSION_FILES[@]}"; do
     echo -e "  ${CYAN}$session_id${NC}"
     echo -e "    Time: $time_part"
     [[ -n "$issues" ]] && echo -e "    Issues: $issues"
-
-    ((idx++))
 done
 echo ""
 
