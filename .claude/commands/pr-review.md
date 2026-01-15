@@ -609,7 +609,7 @@ gh api graphql -f query='
 ' -f owner="$owner" -f repo="$repo" -F pr="$pr_number" | jq -r '
     .data.repository.pullRequest.reviewThreads.nodes[] |
     select(.isResolved == false) |
-    select(.comments.nodes[0].author.login == "copilot-pull-request-reviewer") |
+    select(.comments.nodes[0]? and .comments.nodes[0].author? and .comments.nodes[0].author.login == "copilot-pull-request-reviewer") |
     .id
 ' | while read thread_id; do
     gh api graphql -f query='

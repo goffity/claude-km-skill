@@ -334,7 +334,7 @@ check_copilot_pending_comments() {
     ' -f owner="${REPO%%/*}" -f repo="${REPO##*/}" -F pr="$pr_number" \
         --jq '[.data.repository.pullRequest.reviewThreads.nodes[] |
               select(.isResolved == false) |
-              select(.comments.nodes[0].author.login == "'"$COPILOT_REVIEWER"'")] | length' 2>/dev/null) || pending_count="0"
+              select(.comments.nodes[0]?.author?.login == "'"$COPILOT_REVIEWER"'")] | length' 2>/dev/null) || pending_count="0"
 
     echo "$pending_count"
 }
@@ -391,6 +391,21 @@ check_prs() {
             is_copilot=true
             if [[ "$INCLUDE_COPILOT" != "true" ]]; then
                 echo -e "${YELLOW}[$(date '+%H:%M:%S')]${NC} Skipping Copilot review for PR #$pr_number (--no-copilot)"
+                # Update state to avoid repeated processing of the same Copilot review
+                if [[ ! -f "$STATE_FILE" ]]; then
+                    echo '{}' >"$STATE_FILE"
+                fi
+                local tmp_state_file
+                tmp_state_file="$(mktemp)"
+                jq --arg pr "$pr_number" \
+                   --arg rid "$latest_review_id" \
+                   --arg cp "0" \
+                   '
+                   .[$pr] = (.[$pr] // {}) |
+                   .[$pr].last_review_id = $rid |
+                   .[$pr].copilot_pending = $cp
+                   ' "$STATE_FILE" >"$tmp_state_file"
+                mv "$tmp_state_file" "$STATE_FILE"
                 continue
             fi
         fi
@@ -402,26 +417,23 @@ check_prs() {
         stored_review_id=$(echo "$current_state" | jq -r '.last_review_id // ""')
         stored_copilot_pending=$(echo "$current_state" | jq -r '.copilot_pending // "0"')
 
-        # Check Copilot pending comments
+        # Check Copilot pending comments (only when Copilot review is detected)
         local copilot_pending="0"
-        if [[ "$INCLUDE_COPILOT" == "true" ]]; then
+        if [[ "$INCLUDE_COPILOT" == "true" && "$is_copilot" == "true" ]]; then
             copilot_pending=$(check_copilot_pending_comments "$pr_number")
         fi
 
         # Determine if we should notify
         local should_notify=false
-        local notify_reason=""
 
         # Check if there's a new review
         if [[ -n "$latest_review_id" && "$latest_review_id" != "$stored_review_id" ]]; then
             should_notify=true
-            notify_reason="new_review"
         fi
 
         # Check if there are new Copilot pending comments (even if review ID is same)
         if [[ "$is_copilot" == "true" && "$copilot_pending" -gt 0 && "$copilot_pending" != "$stored_copilot_pending" ]]; then
             should_notify=true
-            notify_reason="copilot_pending"
             echo -e "${BLUE}[$(date '+%H:%M:%S')]${NC} Copilot has $copilot_pending pending comments on PR #$pr_number"
         fi
 
