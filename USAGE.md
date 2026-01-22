@@ -608,7 +608,7 @@ project/
     │   └── topic.md
     └── retrospective/    # Layer 3: Session reviews
         └── YYYY-MM/
-            └── retrospective_*.md
+            └── retrospective_YYYY-MM-DD_hhmmss.md
 ```
 
 ---
