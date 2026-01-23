@@ -161,7 +161,7 @@ cmd_init() {
             user|project) config_type="$1"; shift ;;
             *)
                 echo "Unknown option: $1" >&2
-                echo "Usage: jira-client.sh init [--domain X] [--email Y] [--token Z] [--project P] [--location project|user]" >&2
+                echo "Usage: jira-client.sh init --domain X --email Y --token Z --project P [--location project|user]" >&2
                 return 1
                 ;;
         esac
@@ -204,6 +204,22 @@ cmd_init() {
     # Validate required fields
     if [[ -z "$domain" ]] || [[ -z "$email" ]] || [[ -z "$token" ]] || [[ -z "$project" ]]; then
         echo "Error: All fields are required (domain, email, token, project)" >&2
+        return 1
+    fi
+
+    # Format validation
+    if [[ ! "$domain" =~ ^[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$ ]]; then
+        echo "Error: Invalid domain format. Expected something like 'mycompany.atlassian.net'." >&2
+        return 1
+    fi
+
+    if [[ ! "$email" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]; then
+        echo "Error: Invalid email format. Expected something like 'user@example.com'." >&2
+        return 1
+    fi
+
+    if [[ ! "$project" =~ ^[A-Z][A-Z0-9]*$ ]]; then
+        echo "Error: Invalid project key format. Use uppercase letters and numbers (e.g., 'PROJ')." >&2
         return 1
     fi
 
@@ -640,6 +656,10 @@ Environment Variables:
   JIRA_EMAIL            Your Atlassian account email
   JIRA_API_TOKEN        API token from Atlassian
   JIRA_PROJECT          Default project key
+
+Security Note:
+  Passing --token via CLI args exposes it in process list and shell history.
+  Prefer setting JIRA_API_TOKEN env var or using interactive mode for sensitive tokens.
 EOF
 }
 
