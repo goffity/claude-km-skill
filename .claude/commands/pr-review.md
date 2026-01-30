@@ -225,34 +225,63 @@ gh api repos/{owner}/{repo}/pulls/{pr_number}/comments/{comment_id}/replies \
 **IMPORTANT:** หลังจาก reply ไปที่ comment แล้ว ให้ resolve conversation ทันที
 
 ```bash
-# Helper function: Get thread_id from comment_id
+# Helper function: Get thread_id from comment_id (with pagination)
+# Note: Supports PRs with >100 review threads
 get_thread_id_for_comment() {
     local owner="$1"
     local repo="$2"
     local pr_number="$3"
     local comment_id="$4"
+    local cursor=""
+    local thread_id=""
 
-    gh api graphql -f query='
-        query($owner: String!, $repo: String!, $pr: Int!) {
-            repository(owner: $owner, name: $repo) {
-                pullRequest(number: $pr) {
-                    reviewThreads(first: 100) {
-                        nodes {
-                            id
-                            isResolved
-                            comments(first: 1) {
-                                nodes {
-                                    databaseId
+    while [[ -z "$thread_id" ]]; do
+        local cursor_arg=""
+        if [[ -n "$cursor" && "$cursor" != "null" ]]; then
+            cursor_arg="-f cursor=$cursor"
+        fi
+
+        # shellcheck disable=SC2086
+        local result=$(gh api graphql -f query='
+            query($owner: String!, $repo: String!, $pr: Int!, $cursor: String) {
+                repository(owner: $owner, name: $repo) {
+                    pullRequest(number: $pr) {
+                        reviewThreads(first: 100, after: $cursor) {
+                            pageInfo {
+                                hasNextPage
+                                endCursor
+                            }
+                            nodes {
+                                id
+                                isResolved
+                                comments(first: 1) {
+                                    nodes {
+                                        databaseId
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
-        }
-    ' -f owner="$owner" -f repo="$repo" -F pr="$pr_number" \
-      --jq ".data.repository.pullRequest.reviewThreads.nodes[] |
-            select(.comments.nodes[0].databaseId == $comment_id) | .id"
+        ' -f owner="$owner" -f repo="$repo" -F pr="$pr_number" $cursor_arg)
+
+        # Find thread_id using --argjson for safe variable passing
+        thread_id=$(echo "$result" | jq -r --argjson commentId "$comment_id" '
+            .data.repository.pullRequest.reviewThreads.nodes[] |
+            select(.comments.nodes[0].databaseId == $commentId) | .id // empty
+        ')
+
+        # Check for more pages
+        local has_next=$(echo "$result" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.hasNextPage')
+        cursor=$(echo "$result" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.endCursor')
+
+        if [[ "$has_next" != "true" || -z "$cursor" || "$cursor" == "null" ]]; then
+            break
+        fi
+    done
+
+    echo "$thread_id"
 }
 
 # Helper function: Resolve thread by ID
