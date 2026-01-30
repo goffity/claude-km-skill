@@ -216,10 +216,20 @@ gh auth refresh -s project,read:project,read:org
 | ปัญหา | สาเหตุ | วิธีแก้ |
 |-------|--------|--------|
 | `404 Not Found` เมื่อเรียก Discussion API | ใช้ REST แทน GraphQL | ใช้ `gh api graphql` แทน |
-| `Resource not accessible` | Token scope ไม่พอ | `gh auth refresh -s read:discussion` |
+| `Resource not accessible` (read) | Token scope ไม่พอสำหรับอ่าน | `gh auth refresh -s read:discussion` |
+| `Resource not accessible` (write) | Token scope ไม่พอสำหรับ mutation | `gh auth refresh -s write:discussion` |
 | `Could not resolve to a Discussion` | Discussion ID ผิด | ใช้ GraphQL query หา ID ก่อน |
 | `null` response จาก mutation | Permission หรือ state ไม่ถูกต้อง | ตรวจสอบว่า discussion ยังเปิดอยู่ |
 | Shell injection ใน JSON body | ใช้ string interpolation | ใช้ `jq --arg` หรือ `-F body=@file` |
+
+**Token Scopes for Discussions:**
+
+| Operation | Required Scope |
+|-----------|----------------|
+| List/Query discussions | `read:discussion` |
+| Add comment | `write:discussion` |
+| Close/Reopen discussion | `write:discussion` |
+| Mark as answer | `write:discussion` |
 
 ### วิธีตรวจสอบปัญหา
 
