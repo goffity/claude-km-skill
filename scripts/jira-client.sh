@@ -1407,9 +1407,14 @@ cmd_create_subtask_templated() {
     local description
     description=$(generate_subtask_template "" "$blocked_by" "$blocks")
 
-    # Create subtask
+    # Create subtask using array for proper argument handling
+    local create_args=("$parent_key" "$summary" "$description")
+    if [[ -n "$due_date" ]]; then
+        create_args+=(--due "$due_date")
+    fi
+
     local key
-    key=$(cmd_create_subtask "$parent_key" "$summary" "$description" ${due_date:+--due "$due_date"})
+    key=$(cmd_create_subtask "${create_args[@]}")
 
     if [[ -z "$key" ]]; then
         return 1
