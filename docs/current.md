@@ -1,5 +1,5 @@
 STATE: completed
-TASK: Add --due flag to jira create command
-SINCE: 2026-02-09 12:38
-ISSUE: #104
-BRANCH: main (merged from feat/104-jira-create-due-date)
+TASK: Refactor specialist TDD to autonomous via TDG plugin (multi-agent-auto-skill PR #86)
+SINCE: 2026-02-10 01:13
+ISSUE: #86 (multi-agent-auto-skill)
+BRANCH: main (merged from refactor/tdd-autonomous-specialist)
