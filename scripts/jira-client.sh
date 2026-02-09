@@ -660,7 +660,7 @@ cmd_create() {
             --assign-self)
                 assign_to="me"; shift ;;
             --label|--labels)
-                [[ -z "${2:-}" || "$2" == --* ]] && { echo "Error: --label requires comma-separated labels" >&2; return 1; }
+                [[ -z "${2:-}" || "$2" == --* ]] && { echo "Error: $1 requires comma-separated labels" >&2; return 1; }
                 labels="$2"; shift 2 ;;
             --points)
                 [[ -z "${2:-}" || "$2" == --* ]] && { echo "Error: --points requires a numeric value" >&2; return 1; }
@@ -676,7 +676,7 @@ cmd_create() {
     issue_type="${positional[3]:-Task}"
 
     if [[ -z "$project" ]] || [[ -z "$summary" ]]; then
-        echo "Usage: jira-client.sh create <project> <summary> [description] [issue_type] [--assign me|accountId] [--label L1,L2] [--points N]" >&2
+        echo "Usage: jira-client.sh create <project> <summary> [description] [issue_type] [--assign me|accountId] [--label|--labels L1,L2] [--points N]" >&2
         return 1
     fi
 
@@ -708,7 +708,7 @@ cmd_create() {
                     issuetype: { name: $issue_type }
                 }
             }
-            | if $labels != "" then .fields.labels = ($labels | split(",")) else . end
+            | if $labels != "" then .fields.labels = ($labels | split(",") | map(gsub("^\\s+|\\s+$"; "")) | map(select(. != ""))) else . end
             | if $points != "" then .fields[$sp_field] = ($points | tonumber) else . end')
     else
         payload=$(jq -n \
@@ -725,7 +725,7 @@ cmd_create() {
                     issuetype: { name: $issue_type }
                 }
             }
-            | if $labels != "" then .fields.labels = ($labels | split(",")) else . end
+            | if $labels != "" then .fields.labels = ($labels | split(",") | map(gsub("^\\s+|\\s+$"; "")) | map(select(. != ""))) else . end
             | if $points != "" then .fields[$sp_field] = ($points | tonumber) else . end')
     fi
 
@@ -783,7 +783,7 @@ cmd_create_subtask() {
             --assign-self)
                 assign_to="me"; shift ;;
             --label|--labels)
-                [[ -z "${2:-}" || "$2" == --* ]] && { echo "Error: --label requires comma-separated labels" >&2; return 1; }
+                [[ -z "${2:-}" || "$2" == --* ]] && { echo "Error: $1 requires comma-separated labels" >&2; return 1; }
                 labels="$2"; shift 2 ;;
             --points)
                 [[ -z "${2:-}" || "$2" == --* ]] && { echo "Error: --points requires a numeric value" >&2; return 1; }
@@ -798,7 +798,7 @@ cmd_create_subtask() {
     description="${positional[2]:-}"
 
     if [[ -z "$parent_key" ]] || [[ -z "$summary" ]]; then
-        echo "Usage: jira-client.sh create-subtask <parent-key> <summary> [description] [--due YYYY-MM-DD] [--assign me|accountId] [--label L1,L2] [--points N]" >&2
+        echo "Usage: jira-client.sh create-subtask <parent-key> <summary> [description] [--due YYYY-MM-DD] [--assign me|accountId] [--label|--labels L1,L2] [--points N]" >&2
         return 1
     fi
 
@@ -845,7 +845,7 @@ cmd_create_subtask() {
                 }
             }
             | if $due_date != "" then .fields.duedate = $due_date else . end
-            | if $labels != "" then .fields.labels = ($labels | split(",")) else . end
+            | if $labels != "" then .fields.labels = ($labels | split(",") | map(gsub("^\\s+|\\s+$"; "")) | map(select(. != ""))) else . end
             | if $points != "" then .fields[$sp_field] = ($points | tonumber) else . end')
     else
         payload=$(jq -n \
@@ -865,7 +865,7 @@ cmd_create_subtask() {
                 }
             }
             | if $due_date != "" then .fields.duedate = $due_date else . end
-            | if $labels != "" then .fields.labels = ($labels | split(",")) else . end
+            | if $labels != "" then .fields.labels = ($labels | split(",") | map(gsub("^\\s+|\\s+$"; "")) | map(select(. != ""))) else . end
             | if $points != "" then .fields[$sp_field] = ($points | tonumber) else . end')
     fi
 
@@ -1588,13 +1588,13 @@ Configuration Commands:
   status                Show configuration status
 
 Issue Commands:
-  create <project> <summary> [description] [type] [--assign me|accountId] [--label L1,L2] [--points N]
+  create <project> <summary> [description] [type] [--assign me|accountId] [--label|--labels L1,L2] [--points N]
                         Create new issue (auto-assigns via prefix mapping)
   create-story <project> <summary> [--labels L1,L2] [--due YYYY-MM-DD]
                         Create Story with standard template
   create-epic <project> <summary> [--labels L1,L2] [--due YYYY-MM-DD]
                         Create Epic with standard template
-  create-subtask <parent-key> <summary> [description] [--due YYYY-MM-DD] [--assign me|accountId] [--label L1,L2] [--points N]
+  create-subtask <parent-key> <summary> [description] [--due YYYY-MM-DD] [--assign me|accountId] [--label|--labels L1,L2] [--points N]
                         Create subtask under parent issue
   create-subtask-templated <parent-key> <summary> [options]
                         Create subtask with template and dependency links
@@ -1665,6 +1665,7 @@ Environment Variables:
   JIRA_EMAIL            Your Atlassian account email
   JIRA_API_TOKEN        API token from Atlassian
   JIRA_PROJECT          Default project key
+  JIRA_STORY_POINTS_FIELD  Story points custom field (default: customfield_10016)
 
 Auto-assign Configuration:
   Add prefix mappings to .jira-config:
