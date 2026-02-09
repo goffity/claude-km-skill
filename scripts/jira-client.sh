@@ -680,6 +680,12 @@ cmd_create() {
         return 1
     fi
 
+    # Validate story points is numeric if provided
+    if [[ -n "$story_points" ]] && [[ ! "$story_points" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+        echo "Error: --points must be a numeric value (e.g., 3 or 0.5)" >&2
+        return 1
+    fi
+
     # Build payload using jq for safe JSON escaping
     local payload
     if [[ -n "$description" ]]; then
@@ -797,6 +803,12 @@ cmd_create_subtask() {
     fi
 
     validate_issue_key "$parent_key" || return 1
+
+    # Validate story points is numeric if provided
+    if [[ -n "$story_points" ]] && [[ ! "$story_points" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+        echo "Error: --points must be a numeric value (e.g., 3 or 0.5)" >&2
+        return 1
+    fi
 
     # Validate due date format if provided
     if [[ -n "$due_date" ]] && [[ ! "$due_date" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
