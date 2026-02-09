@@ -87,8 +87,12 @@ load_config() {
 # JIRA_EMAIL - e.g., "user@example.com"
 # JIRA_API_TOKEN - API token from https://id.atlassian.com/manage-profile/security/api-tokens
 # JIRA_PROJECT - default project key, e.g., "PROJ"
+# JIRA_STORY_POINTS_FIELD - story points custom field (default: "customfield_10016")
 
 load_config
+
+# Default story points field (configurable via .jira-config)
+JIRA_STORY_POINTS_FIELD="${JIRA_STORY_POINTS_FIELD:-customfield_10016}"
 
 # Validate required config
 validate_config() {
@@ -644,7 +648,7 @@ cmd_projects() {
 cmd_create() {
     validate_config || return 1
 
-    local project="" summary="" description="" issue_type="Task" assign_to=""
+    local project="" summary="" description="" issue_type="Task" assign_to="" labels="" story_points=""
 
     # Parse positional and flag arguments
     local positional=()
@@ -655,6 +659,12 @@ cmd_create() {
                 assign_to="$2"; shift 2 ;;
             --assign-self)
                 assign_to="me"; shift ;;
+            --label|--labels)
+                [[ -z "${2:-}" || "$2" == --* ]] && { echo "Error: --label requires comma-separated labels" >&2; return 1; }
+                labels="$2"; shift 2 ;;
+            --points)
+                [[ -z "${2:-}" || "$2" == --* ]] && { echo "Error: --points requires a numeric value" >&2; return 1; }
+                story_points="$2"; shift 2 ;;
             *)
                 positional+=("$1"); shift ;;
         esac
@@ -666,7 +676,7 @@ cmd_create() {
     issue_type="${positional[3]:-Task}"
 
     if [[ -z "$project" ]] || [[ -z "$summary" ]]; then
-        echo "Usage: jira-client.sh create <project> <summary> [description] [issue_type] [--assign me|accountId]" >&2
+        echo "Usage: jira-client.sh create <project> <summary> [description] [issue_type] [--assign me|accountId] [--label L1,L2] [--points N]" >&2
         return 1
     fi
 
@@ -681,6 +691,9 @@ cmd_create() {
             --arg summary "$summary" \
             --argjson description "$adf_description" \
             --arg issue_type "$issue_type" \
+            --arg labels "$labels" \
+            --arg points "$story_points" \
+            --arg sp_field "$JIRA_STORY_POINTS_FIELD" \
             '{
                 fields: {
                     project: { key: $project },
@@ -688,19 +701,26 @@ cmd_create() {
                     description: $description,
                     issuetype: { name: $issue_type }
                 }
-            }')
+            }
+            | if $labels != "" then .fields.labels = ($labels | split(",")) else . end
+            | if $points != "" then .fields[$sp_field] = ($points | tonumber) else . end')
     else
         payload=$(jq -n \
             --arg project "$project" \
             --arg summary "$summary" \
             --arg issue_type "$issue_type" \
+            --arg labels "$labels" \
+            --arg points "$story_points" \
+            --arg sp_field "$JIRA_STORY_POINTS_FIELD" \
             '{
                 fields: {
                     project: { key: $project },
                     summary: $summary,
                     issuetype: { name: $issue_type }
                 }
-            }')
+            }
+            | if $labels != "" then .fields.labels = ($labels | split(",")) else . end
+            | if $points != "" then .fields[$sp_field] = ($points | tonumber) else . end')
     fi
 
     local result=$(jira_api POST "/issue" "$payload")
@@ -742,7 +762,7 @@ cmd_create() {
 cmd_create_subtask() {
     validate_config || return 1
 
-    local parent_key="" summary="" description="" due_date="" assign_to=""
+    local parent_key="" summary="" description="" due_date="" assign_to="" labels="" story_points=""
 
     # Parse arguments
     local positional=()
@@ -756,6 +776,12 @@ cmd_create_subtask() {
                 assign_to="$2"; shift 2 ;;
             --assign-self)
                 assign_to="me"; shift ;;
+            --label|--labels)
+                [[ -z "${2:-}" || "$2" == --* ]] && { echo "Error: --label requires comma-separated labels" >&2; return 1; }
+                labels="$2"; shift 2 ;;
+            --points)
+                [[ -z "${2:-}" || "$2" == --* ]] && { echo "Error: --points requires a numeric value" >&2; return 1; }
+                story_points="$2"; shift 2 ;;
             *)
                 positional+=("$1"); shift ;;
         esac
@@ -766,7 +792,7 @@ cmd_create_subtask() {
     description="${positional[2]:-}"
 
     if [[ -z "$parent_key" ]] || [[ -z "$summary" ]]; then
-        echo "Usage: jira-client.sh create-subtask <parent-key> <summary> [description] [--due YYYY-MM-DD] [--assign me|accountId]" >&2
+        echo "Usage: jira-client.sh create-subtask <parent-key> <summary> [description] [--due YYYY-MM-DD] [--assign me|accountId] [--label L1,L2] [--points N]" >&2
         return 1
     fi
 
@@ -794,6 +820,9 @@ cmd_create_subtask() {
             --arg summary "$summary" \
             --argjson description "$adf_description" \
             --arg due_date "$due_date" \
+            --arg labels "$labels" \
+            --arg points "$story_points" \
+            --arg sp_field "$JIRA_STORY_POINTS_FIELD" \
             '{
                 fields: {
                     project: { key: $project },
@@ -802,13 +831,19 @@ cmd_create_subtask() {
                     description: $description,
                     issuetype: { name: "Subtask" }
                 }
-            } | if $due_date != "" then .fields.duedate = $due_date else . end')
+            }
+            | if $due_date != "" then .fields.duedate = $due_date else . end
+            | if $labels != "" then .fields.labels = ($labels | split(",")) else . end
+            | if $points != "" then .fields[$sp_field] = ($points | tonumber) else . end')
     else
         payload=$(jq -n \
             --arg project "$project" \
             --arg parent "$parent_key" \
             --arg summary "$summary" \
             --arg due_date "$due_date" \
+            --arg labels "$labels" \
+            --arg points "$story_points" \
+            --arg sp_field "$JIRA_STORY_POINTS_FIELD" \
             '{
                 fields: {
                     project: { key: $project },
@@ -816,7 +851,10 @@ cmd_create_subtask() {
                     summary: $summary,
                     issuetype: { name: "Subtask" }
                 }
-            } | if $due_date != "" then .fields.duedate = $due_date else . end')
+            }
+            | if $due_date != "" then .fields.duedate = $due_date else . end
+            | if $labels != "" then .fields.labels = ($labels | split(",")) else . end
+            | if $points != "" then .fields[$sp_field] = ($points | tonumber) else . end')
     fi
 
     local result=$(jira_api POST "/issue" "$payload")
@@ -1538,13 +1576,13 @@ Configuration Commands:
   status                Show configuration status
 
 Issue Commands:
-  create <project> <summary> [description] [type] [--assign me|accountId]
+  create <project> <summary> [description] [type] [--assign me|accountId] [--label L1,L2] [--points N]
                         Create new issue (auto-assigns via prefix mapping)
   create-story <project> <summary> [--labels L1,L2] [--due YYYY-MM-DD]
                         Create Story with standard template
   create-epic <project> <summary> [--labels L1,L2] [--due YYYY-MM-DD]
                         Create Epic with standard template
-  create-subtask <parent-key> <summary> [description] [--due YYYY-MM-DD] [--assign me|accountId]
+  create-subtask <parent-key> <summary> [description] [--due YYYY-MM-DD] [--assign me|accountId] [--label L1,L2] [--points N]
                         Create subtask under parent issue
   create-subtask-templated <parent-key> <summary> [options]
                         Create subtask with template and dependency links
