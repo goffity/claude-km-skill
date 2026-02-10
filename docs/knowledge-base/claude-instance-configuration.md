@@ -10,7 +10,7 @@
 
 ## Key Insight
 
-> `~/.claude/CLAUDE.md` is the single source of truth for rules that ALL Claude instances must follow — including specialists spawned by multi-agent orchestration.
+> `~/.claude/CLAUDE.md` is the single **globally shared** baseline for rules that ALL Claude instances must follow — including specialists spawned by multi-agent orchestration. Project and workspace rule files can add further constraints but should not conflict with these global rules.
 
 ---
 
@@ -18,7 +18,7 @@
 
 | Attempt | Result |
 |---------|--------|
-| Store rules in `claude-km-skill/docs/` | Specialists can't access — different workspace |
+| Store rules in skill's `docs/` dir (`~/.claude/skills/claude-km-skill/docs/`) | Specialists can't access — different workspace |
 | Rely on Claude default behavior | Auto-generated footers, Co-Authored-By in commits |
 | Per-project CLAUDE.md only | Rules not shared across projects/instances |
 
@@ -36,12 +36,19 @@
 
 ### What Each Instance Can See
 
+**Terminology:**
+- **Main Claude** — The primary Claude Code instance the user interacts with directly
+- **Specialist** — An independent Claude instance spawned by multi-agent orchestration, running in its own workspace directory (e.g., `workspaces/specialist-name/`)
+- **Subagent** — A child agent spawned within the same process via the Task tool; inherits the parent's working directory and context
+- **`{project}`** — The root directory of the current git repository (where `CLAUDE.md` lives)
+- **`{workspace}`** — The working directory assigned to a specific specialist instance
+
 | Source | Main Claude | Specialist | Subagent |
 |--------|-------------|------------|----------|
 | `~/.claude/CLAUDE.md` | Yes | Yes | Yes |
 | `{project}/CLAUDE.md` | Yes | Only own workspace | Yes (parent's) |
 | `{workspace}/.claude/rules/` | Yes | Only own workspace | No |
-| `claude-km-skill/docs/` | Yes (if in that dir) | No | No |
+| `~/.claude/skills/claude-km-skill/docs/` | Yes (if in that dir) | No | No |
 
 ### Pattern: What Goes Where
 
