@@ -409,7 +409,7 @@ EOF
 
 ```bash
 # Get script directory and working directory
-SKILL_DIR="${HOME}/.claude/skills/claude-km-skill"
+SKILL_DIR="${HOME}/.claude/skills/dev-km"
 WORKING_DIR="$(pwd)"
 
 # Check if daemon already running

@@ -1,5 +1,7 @@
 ---
-description: Set current focus - update docs/current.md and log to activity.log
+name: focus
+description: Sets current task focus, creates GitHub/Jira issues, and creates feature branches.
+argument-hint: "[task]"
 ---
 
 # Set Focus
@@ -75,6 +77,8 @@ fi
 
 **ถ้าไม่มี Jira config:**
 ข้ามไป Step 4 (ใช้ GitHub เป็น default)
+
+For Jira-specific paths (B and C), see `jira-paths.md`.
 
 ---
 
@@ -160,95 +164,12 @@ EOF
 **อัตโนมัติ assign user ให้กับ issue:**
 
 ```bash
-# Get issue number from creation output
 ISSUE_NUMBER=[issue-number-from-step-5]
-
-# Auto-assign to current user (silently skip on error)
 if gh issue edit "$ISSUE_NUMBER" --add-assignee @me 2>/dev/null; then
-    echo "✓ Assigned issue #$ISSUE_NUMBER to you"
+    echo "Assigned issue #$ISSUE_NUMBER to you"
 else
-    echo "→ Auto-assign skipped (already assigned or no permission)"
+    echo "Auto-assign skipped (already assigned or no permission)"
 fi
-```
-
-**Edge Cases Handled:**
-- Issue already has assignee → adds as additional assignee
-- User not authenticated → skips silently
-- Permission denied → skips silently
-
-**ไปที่ Step 6: Create Feature Branch**
-
----
-
-## Path B: Jira (New Issue)
-
-### Step 4B: Gather Jira Issue Details
-
-ใช้ AskUserQuestion:
-
-1. **Project Key**: รหัส project ใน Jira (e.g., PROJ)
-2. **Issue Type**: Task, Bug, Story, Epic
-3. **Summary**: หัวข้อ issue
-4. **Description**: รายละเอียด
-
-### Step 5B: Create Jira Issue
-
-```bash
-# Get Jira type to git type mapping
-# Bug -> fix, Task/Story/Epic -> feat, Improvement -> refactor
-JIRA_TYPE="[selected type]"
-case "$JIRA_TYPE" in
-    Bug) GIT_TYPE="fix" ;;
-    Improvement) GIT_TYPE="refactor" ;;
-    *) GIT_TYPE="feat" ;;
-esac
-
-# Create issue
-RESULT=$(./scripts/jira-client.sh create "[PROJECT]" "[SUMMARY]" "[DESCRIPTION]" "[JIRA_TYPE]")
-ISSUE_KEY=$(echo "$RESULT" | grep -E '^[A-Z]+-[0-9]+$' | head -1)
-
-echo "Created: $ISSUE_KEY"
-```
-
-เก็บ `ISSUE_KEY` (เช่น `PROJ-123`) ไว้ใช้ใน Step 6
-
-**ไปที่ Step 6: Create Feature Branch**
-
----
-
-## Path C: Jira (Existing Issue)
-
-### Step 4C: Select Existing Jira Issue
-
-**แสดง issues ที่ assign ให้ user:**
-```bash
-./scripts/jira-client.sh my-issues
-```
-
-**หรือ list issues ใน project:**
-```bash
-./scripts/jira-client.sh list [PROJECT] "To Do"
-```
-
-**ถาม user:**
-```
-ใส่ Issue Key ที่ต้องการทำ (e.g., PROJ-123):
-```
-
-### Step 5C: Fetch Issue Details
-
-```bash
-./scripts/jira-client.sh get [ISSUE_KEY]
-```
-
-**Map Jira type to git type:**
-```bash
-JIRA_TYPE=$(./scripts/jira-client.sh get [ISSUE_KEY] | jq -r '.type')
-case "$JIRA_TYPE" in
-    Bug) GIT_TYPE="fix" ;;
-    Improvement) GIT_TYPE="refactor" ;;
-    *) GIT_TYPE="feat" ;;
-esac
 ```
 
 **ไปที่ Step 6: Create Feature Branch**
@@ -265,7 +186,6 @@ export TZ='Asia/Bangkok'
 CURRENT_BRANCH=$(git branch --show-current)
 DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
 
-# ถ้าไม่มี default branch ให้ใช้ main หรือ master
 if [ -z "$DEFAULT_BRANCH" ]; then
   if git show-ref --verify --quiet refs/heads/main; then
     DEFAULT_BRANCH="main"
@@ -274,14 +194,8 @@ if [ -z "$DEFAULT_BRANCH" ]; then
   fi
 fi
 
-# ตรวจสอบว่าอยู่บน main/master/default branch หรือไม่
 if [ "$CURRENT_BRANCH" = "main" ] || [ "$CURRENT_BRANCH" = "master" ] || [ "$CURRENT_BRANCH" = "$DEFAULT_BRANCH" ]; then
   echo "Currently on $CURRENT_BRANCH - creating feature branch..."
-
-  # สร้าง branch name
-  # GitHub: [type]/[issue-number]-[short-slug]
-  # Jira: [type]/[ISSUE-KEY]-[short-slug]
-
   git checkout -b "[type]/[issue-id]-[short-slug]"
   echo "Created and switched to branch: [type]/[issue-id]-[short-slug]"
 else
@@ -344,10 +258,7 @@ echo "$(date '+%Y-%m-%d %H:%M') | working | [task description] ([issue-id])" >> 
 
 **Transition to In Progress (if available):**
 ```bash
-# Get available transitions
 ./scripts/jira-client.sh transitions [ISSUE_KEY]
-
-# Apply "In Progress" or similar transition
 ./scripts/jira-client.sh transition [ISSUE_KEY] [transition_id]
 ```
 

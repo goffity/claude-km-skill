@@ -1,5 +1,7 @@
 ---
-description: Post-task review and retrospective with auto-capture and session memory
+name: td
+description: Creates post-task retrospectives with Before/After context and session documentation.
+argument-hint: "[done|pending|blocked]"
 ---
 
 # Post-Task Review & Retrospective
@@ -99,7 +101,6 @@ echo "Issue: #$ISSUE"
 **Auto-assign issue (ensure user is assigned):**
 
 ```bash
-# Auto-assign to current user if not already assigned (silently skip on error)
 gh issue edit "$ISSUE" --add-assignee @me 2>/dev/null || true
 ```
 
@@ -153,7 +154,6 @@ EOF
 ```bash
 export TZ='Asia/Bangkok'
 
-# For completed
 cat > docs/current.md << EOF
 STATE: completed
 TASK: [task from original focus]
@@ -171,192 +171,7 @@ echo "$(date '+%Y-%m-%d %H:%M') | completed | [task]" >> docs/logs/activity.log
 
 ### Step 7: Check PR Status & Commit Docs
 
-**IMPORTANT:** ห้าม commit docs ลง main/master โดยตรง ต้องตรวจสอบ PR status ก่อนเสมอ
-
-#### 7.1 ตรวจสอบ Branch และ PR Status
-
-```bash
-export TZ='Asia/Bangkok'
-
-CURRENT_BRANCH=$(git branch --show-current)
-ISSUE=$(grep "^ISSUE:" docs/current.md | cut -d: -f2 | tr -d ' #')
-
-echo "=== Current State ==="
-echo "Branch: $CURRENT_BRANCH"
-echo "Issue: #$ISSUE"
-
-# ตรวจสอบว่าอยู่บน main/master หรือไม่
-if [ "$CURRENT_BRANCH" = "main" ] || [ "$CURRENT_BRANCH" = "master" ]; then
-  echo "⚠️  On protected branch - need to create docs branch"
-  PR_STATUS="NO_BRANCH"
-else
-  # ตรวจสอบ PR status สำหรับ branch ปัจจุบัน
-  PR_INFO=$(gh pr list --head "$CURRENT_BRANCH" --state all --json number,state,url --jq '.[0]')
-
-  if [ -z "$PR_INFO" ] || [ "$PR_INFO" = "null" ]; then
-    echo "No PR found for branch $CURRENT_BRANCH"
-    PR_STATUS="NO_PR"
-  else
-    PR_STATE=$(echo "$PR_INFO" | jq -r '.state')
-    PR_NUMBER=$(echo "$PR_INFO" | jq -r '.number')
-    echo "PR #$PR_NUMBER state: $PR_STATE"
-
-    if [ "$PR_STATE" = "OPEN" ]; then
-      PR_STATUS="OPEN"
-    else
-      PR_STATUS="CLOSED"  # MERGED or CLOSED
-    fi
-  fi
-fi
-
-echo "PR_STATUS: $PR_STATUS"
-```
-
-#### 7.2 Handle ตาม PR Status
-
-**Case A: PR ยังเปิดอยู่ (OPEN)**
-
-> **Note:** ต้องรัน section 7.1 ก่อนเพื่อให้ตัวแปร `PR_NUMBER` ถูกกำหนด
-
-```bash
-# PR ยังเปิดอยู่ → commit และ push ไปที่ PR เดิม
-# ตรวจสอบว่า PR_NUMBER ถูกกำหนดแล้ว
-if [ -z "$PR_NUMBER" ]; then
-  echo "ERROR: PR_NUMBER variable is not set. Run section 7.1 first."
-  exit 1
-fi
-
-echo "✓ PR #$PR_NUMBER is open - committing to existing PR"
-
-# Check for docs changes
-echo "=== Docs Changes ==="
-git status --short docs/
-
-# Stage all docs
-git add docs/
-
-# ตรวจสอบว่ามี changes ที่จะ commit หรือไม่
-if git diff --cached --quiet; then
-  echo "No changes to commit"
-  exit 0
-fi
-
-# Commit docs
-git commit -m "$(cat <<'EOF'
-docs: retrospective and session update for [TASK]
-
-- Updated docs/current.md status
-- Added activity log entry
-- Created retrospective: [retrospective-file-path]
-
-Related: #[issue-number]
-EOF
-)"
-
-# Push to update PR (ensure upstream is configured)
-CURRENT_BRANCH=$(git branch --show-current)
-git push -u origin "$CURRENT_BRANCH"
-
-echo "✓ Docs committed and pushed to PR #$PR_NUMBER"
-```
-
-**Case B: ไม่มี PR หรือ PR ถูก merged/closed แล้ว (NO_PR, CLOSED, NO_BRANCH)**
-
-> **Note:** ต้องรัน section 7.1 ก่อนเพื่อให้ตัวแปร `ISSUE` ถูกกำหนด
-
-```bash
-# ไม่มี PR หรือ PR ปิดแล้ว → สร้าง branch และ PR ใหม่สำหรับ docs
-echo "⚠️  No open PR - creating new docs branch and PR"
-
-# ตรวจสอบว่า ISSUE ถูกกำหนดแล้ว
-if [ -z "$ISSUE" ]; then
-  echo "ERROR: ISSUE variable is not set. Run section 7.1 first."
-  exit 1
-fi
-
-# 1. Stash uncommitted docs changes (ป้องกัน changes หาย)
-git stash push -m "docs-temp-$ISSUE" -- docs/
-echo "✓ Stashed docs changes"
-
-# 2. Checkout main และ pull latest
-git checkout main
-git pull origin main
-
-# 3. สร้าง docs branch ใหม่
-DOCS_BRANCH="docs/$ISSUE-retrospective"
-git checkout -b "$DOCS_BRANCH"
-echo "✓ Created branch: $DOCS_BRANCH"
-
-# 4. Pop stash เพื่อดึง docs changes กลับมา
-git stash pop
-echo "✓ Restored docs changes"
-
-# 5. Stage docs
-git add docs/
-
-# 6. ตรวจสอบว่ามี changes ที่จะ commit หรือไม่
-if git diff --cached --quiet; then
-  echo "No changes to commit"
-  exit 0
-fi
-
-# 7. Commit docs
-git commit -m "$(cat <<'EOF'
-docs: retrospective and session update for [TASK]
-
-- Updated docs/current.md status
-- Added activity log entry
-- Created retrospective: [retrospective-file-path]
-
-Related: #[issue-number]
-EOF
-)"
-
-# 8. Push branch ใหม่
-git push -u origin "$DOCS_BRANCH"
-
-# 9. Detect base branch (prefer develop, fallback to default)
-if git branch -r | grep -q "origin/develop"; then
-  BASE_BRANCH="develop"
-else
-  BASE_BRANCH=$(git remote show origin | grep 'HEAD branch' | cut -d: -f2 | xargs)
-fi
-echo "Base branch: $BASE_BRANCH"
-
-# 10. สร้าง PR ใหม่สำหรับ docs
-gh pr create \
-  --base "$BASE_BRANCH" \
-  --title "docs: retrospective for #$ISSUE" \
-  --body "$(cat <<'EOF'
-## Summary
-
-Session documentation update for issue #[issue-number]
-
-## Changes
-
-- Updated `docs/current.md` status
-- Added activity log entry
-- Created retrospective document
-
-## Related
-
-- Issue: #[issue-number]
-- Original PR: #[original-pr-number] (merged)
-EOF
-)"
-
-echo "✓ Docs PR created"
-```
-
-#### 7.3 Verify Commit
-
-```bash
-# Verify commit was created
-git log -1 --oneline
-
-# Show current branch
-echo "Current branch: $(git branch --show-current)"
-```
+For the full PR status checking and commit workflow, see `pr-commit-workflow.md`.
 
 ### Step 8: Check Documentation Updates
 
@@ -373,7 +188,7 @@ echo "Current branch: $(git branch --show-current)"
 **ถ้าพบว่าต้อง update:**
 
 ```markdown
-📝 **Documentation Check**
+Documentation Check
 
 การเปลี่ยนแปลงนี้อาจต้อง update เอกสาร:
 
@@ -387,7 +202,7 @@ echo "Current branch: $(git branch --show-current)"
 ### Step 9: Confirm & Remind
 
 ```markdown
-## Session Complete ✓
+## Session Complete
 
 ### Summary
 - Issue: #[issue-number] - Comment added
@@ -453,7 +268,7 @@ files_changed:
 
 | Test | Status | Details |
 |------|--------|---------|
-| Acceptance Criteria | ✅/❌ | |
+| Acceptance Criteria | pass/fail | |
 
 ---
 
@@ -518,19 +333,12 @@ files_changed:
 ## Workflow Integration
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                   Development Flow                       │
-├─────────────────────────────────────────────────────────┤
-│                                                          │
-│   /focus  ──→  Work  ──→  /commit  ──→  /pr  ──→  /td   │
-│      │                        │          │         │     │
-│      │                        │          │         │     │
-│   Create                   Atomic     Tests/     Session │
-│   Issue                    Commits    Build/     Summary │
-│                                       Review/            │
-│                                       PR                 │
-│                                                          │
-└─────────────────────────────────────────────────────────┘
+/focus  -->  Work  -->  /commit  -->  /pr  -->  /td
+  |                        |          |         |
+Create                  Atomic     Tests/     Session
+Issue                   Commits    Build/     Summary
+                                   Review/
+                                   PR
 ```
 
 ## Related Commands

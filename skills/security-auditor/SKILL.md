@@ -1,5 +1,8 @@
 ---
-description: Security audit for vulnerabilities - OWASP Top 10, injection, authentication issues
+name: security-auditor
+description: Audits code for security vulnerabilities including OWASP Top 10 and authentication issues.
+context: fork
+user-invocable: false
 ---
 
 # Security Auditor
@@ -26,9 +29,7 @@ Agent สำหรับตรวจสอบ security vulnerabilities ตาม
 ### Step 1: Identify Scope
 
 ```bash
-# All project files
 find . -type f \( -name "*.js" -o -name "*.ts" -o -name "*.py" -o -name "*.go" \) | head -50
-
 # Or changed files only
 git diff --name-only HEAD
 ```
@@ -91,11 +92,9 @@ git diff --name-only HEAD
 - [ ] Allowlist for external requests
 - [ ] No user-controlled redirects
 
-### Step 3: Code-Specific Checks
+### Step 3: Secrets Detection
 
-#### Secrets Detection
 ```bash
-# Search for potential secrets
 grep -r "password\|secret\|api_key\|token\|credential" --include="*.js" --include="*.ts" --include="*.py" --include="*.go" .
 ```
 
@@ -105,29 +104,14 @@ Look for:
 - Private keys
 - Connection strings with credentials
 
-#### Input Validation
-Check all user inputs:
-- Form data
-- URL parameters
-- Headers
-- File uploads
-- API payloads
-
-#### Output Encoding
-Check outputs for:
-- XSS prevention
-- HTML encoding
-- JSON encoding
-- URL encoding
-
 ### Step 4: Risk Assessment
 
 | Risk Level | Criteria |
 |------------|----------|
-| 🔴 Critical | Exploitable, high impact |
-| 🟠 High | Exploitable, medium impact |
-| 🟡 Medium | Requires conditions to exploit |
-| 🟢 Low | Minimal impact |
+| Critical | Exploitable, high impact |
+| High | Exploitable, medium impact |
+| Medium | Requires conditions to exploit |
+| Low | Minimal impact |
 
 ## Output Format
 
@@ -151,36 +135,12 @@ Check outputs for:
 
 ---
 
-### Critical Vulnerabilities 🔴
-
-#### [VULN-001] [Vulnerability Name]
+### [VULN-001] [Vulnerability Name]
 - **File:** `path/to/file.js:123`
 - **Type:** [OWASP Category]
 - **Description:** What the vulnerability is
 - **Impact:** What could happen if exploited
 - **Remediation:** How to fix it
-- **Code Example:**
-  ```javascript
-  // Vulnerable code
-  ```
-  ```javascript
-  // Fixed code
-  ```
-
----
-
-### High Severity 🟠
-[Similar format]
-
----
-
-### Medium Severity 🟡
-[Similar format]
-
----
-
-### Low Severity 🟢
-[Similar format]
 
 ---
 
@@ -189,21 +149,4 @@ Check outputs for:
 1. **Immediate:** [Critical fixes]
 2. **Short-term:** [High priority improvements]
 3. **Long-term:** [Security enhancements]
-
----
-
-### Compliance Checklist
-
-- [ ] OWASP Top 10 addressed
-- [ ] No hardcoded secrets
-- [ ] Input validation present
-- [ ] Authentication secure
-- [ ] Data encrypted in transit/rest
 ```
-
-## Integration
-
-- Run before `/td` push step
-- Integrate with CI/CD pipeline
-- Periodic scheduled audits
-- After adding auth/sensitive features

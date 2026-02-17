@@ -1,5 +1,7 @@
 ---
-description: Quick knowledge capture during work sessions
+name: mem
+description: Captures quick knowledge insights during work sessions into structured learning files.
+argument-hint: "[topic]"
 ---
 
 # Memory - Quick Knowledge Capture

@@ -1,5 +1,6 @@
 ---
-description: Fresh start context - get caught up at the start of a new session
+name: recap
+description: Loads session context and pending work status for fresh session starts.
 ---
 
 # Session Recap
@@ -63,17 +64,14 @@ Options:
 ```bash
 export TZ='Asia/Bangkok'
 
-# Get branch from current.md
 EXPECTED_BRANCH=$(grep "^BRANCH:" docs/current.md | cut -d: -f2- | xargs)
 CURRENT_BRANCH=$(git branch --show-current)
 
-# Switch to correct branch if needed
 if [ -n "$EXPECTED_BRANCH" ] && [ "$EXPECTED_BRANCH" != "-" ] && [ "$CURRENT_BRANCH" != "$EXPECTED_BRANCH" ]; then
-  echo "⚠️  Switching to branch: $EXPECTED_BRANCH"
+  echo "Switching to branch: $EXPECTED_BRANCH"
   git checkout "$EXPECTED_BRANCH"
 fi
 
-# Update state to working if it was pending
 sed -i '' 's/STATE: pending/STATE: working/' docs/current.md
 echo "$(date '+%Y-%m-%d %H:%M') | working | [TASK] (resumed)" >> docs/logs/activity.log
 ```
@@ -91,7 +89,6 @@ Branch: [BRANCH]
 ```bash
 export TZ='Asia/Bangkok'
 
-# Create WIP.md if not exists
 if [ ! -f docs/WIP.md ]; then
   echo "# Work In Progress" > docs/WIP.md
   echo "" >> docs/WIP.md
@@ -99,13 +96,11 @@ if [ ! -f docs/WIP.md ]; then
   echo "" >> docs/WIP.md
 fi
 
-# Get current task info
 TASK=$(grep "^TASK:" docs/current.md | cut -d: -f2- | xargs)
 SINCE=$(grep "^SINCE:" docs/current.md | cut -d: -f2- | xargs)
 BRANCH=$(grep "^BRANCH:" docs/current.md | cut -d: -f2- | xargs)
 ISSUE=$(grep "^ISSUE:" docs/current.md | cut -d: -f2- | xargs)
 
-# Append to WIP.md
 echo "## $TASK" >> docs/WIP.md
 echo "" >> docs/WIP.md
 echo "- **Started:** $SINCE" >> docs/WIP.md

@@ -1,5 +1,6 @@
 ---
-description: Work on improvements from all knowledge sources
+name: improve
+description: Extracts and implements pending improvement items from all knowledge sources.
 ---
 
 # Improve - Work on Pending Items

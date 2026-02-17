@@ -1,5 +1,8 @@
 ---
-description: Review code for bugs, security issues, and performance problems before commit/push
+name: code-reviewer
+description: Reviews code changes for bugs, security vulnerabilities, and performance issues.
+context: fork
+user-invocable: false
 ---
 
 # Code Reviewer
@@ -26,7 +29,6 @@ Automated code review agent ตรวจสอบ code quality ก่อน comm
 ### Step 1: Identify Changed Files
 
 ```bash
-# Get list of changed files
 git diff --name-only HEAD
 git diff --cached --name-only
 ```
@@ -46,13 +48,11 @@ For each changed file:
 
 ### Step 3: Categorize Issues
 
-Classify each issue by severity:
-
 | Severity | Meaning | Action |
 |----------|---------|--------|
-| 🔴 Critical | Must fix before merge | Block |
-| 🟡 Warning | Should fix | Review |
-| 🔵 Info | Nice to have | Optional |
+| Critical | Must fix before merge | Block |
+| Warning | Should fix | Review |
+| Info | Nice to have | Optional |
 
 ### Step 4: Check Best Practices
 
@@ -82,7 +82,7 @@ Classify each issue by severity:
 
 ---
 
-### Critical Issues 🔴
+### Critical Issues
 
 #### [filename:line]
 **Issue:** Description of the problem
@@ -91,7 +91,7 @@ Classify each issue by severity:
 
 ---
 
-### Warnings 🟡
+### Warnings
 
 #### [filename:line]
 **Issue:** Description
@@ -99,7 +99,7 @@ Classify each issue by severity:
 
 ---
 
-### Info 🔵
+### Info
 
 #### [filename:line]
 **Note:** Observation or suggestion
@@ -116,16 +116,3 @@ Classify each issue by severity:
 
 **Recommendation:** [APPROVE / REQUEST CHANGES / BLOCK]
 ```
-
-## Example Usage
-
-```
-User: Review the changes I made
-Agent: [Runs code review and produces report]
-```
-
-## Integration
-
-- Works with `/review` command
-- Can be triggered before `/commit`
-- Integrates with `/td` workflow

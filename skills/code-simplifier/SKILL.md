@@ -1,10 +1,13 @@
 ---
-description: Simplify and clean up code after Claude finishes writing - reduce complexity
+name: code-simplifier
+description: Simplifies and cleans up code by reducing complexity and removing unnecessary abstractions.
+context: fork
+user-invocable: false
 ---
 
 # Code Simplifier
 
-Agent สำหรับ simplify code หลังจาก Claude เขียนเสร็จ - ลด complexity และทำให้ code อ่านง่ายขึ้น
+Agent สำหรับ simplify code หลังจากเขียนเสร็จ - ลด complexity และทำให้ code อ่านง่ายขึ้น
 
 ## Purpose
 
@@ -16,7 +19,7 @@ Agent สำหรับ simplify code หลังจาก Claude เขีย
 
 ## When to Use
 
-- หลังจาก Claude เขียน code เสร็จ
+- หลังจากเขียน code เสร็จ
 - เมื่อ code ดู complex เกินไป
 - ก่อน commit เพื่อ clean up
 - เมื่อต้องการ refactor
@@ -26,10 +29,7 @@ Agent สำหรับ simplify code หลังจาก Claude เขีย
 ### Step 1: Identify Target Files
 
 ```bash
-# Files changed in current session
 git diff --name-only HEAD
-
-# Or specific files mentioned by user
 ```
 
 ### Step 2: Analyze Complexity
@@ -66,7 +66,6 @@ For each file, check for:
 
 ### Step 4: Apply YAGNI Principle
 
-**You Aren't Gonna Need It:**
 - Remove code for "future use"
 - Remove unused parameters
 - Remove commented-out code
@@ -114,13 +113,6 @@ For each file, check for:
 | Abstractions removed | Y |
 | Duplicates merged | Z |
 | Lines reduced | N |
-
----
-
-### Recommendations
-
-1. [Specific recommendation]
-2. [Specific recommendation]
 ```
 
 ## Guidelines
@@ -136,33 +128,3 @@ For each file, check for:
 - Don't merge unrelated functions
 - Don't sacrifice clarity for brevity
 - Don't remove useful abstractions
-
-## Example
-
-### Before:
-```javascript
-function processData(data) {
-  if (data) {
-    if (data.items) {
-      if (data.items.length > 0) {
-        return data.items.map(item => item.value);
-      }
-    }
-  }
-  return [];
-}
-```
-
-### After:
-```javascript
-function processData(data) {
-  if (!data?.items?.length) return [];
-  return data.items.map(item => item.value);
-}
-```
-
-## Integration
-
-- Run after major code changes
-- Pair with code-reviewer for complete review
-- Use before `/commit` for clean commits

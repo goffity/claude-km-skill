@@ -1,5 +1,8 @@
 ---
-description: Analyze git changes and create retrospective draft with Before/After context
+name: session-analyzer
+description: Analyzes git changes and creates retrospective drafts with Before/After context.
+context: fork
+user-invocable: false
 ---
 
 # Session Analyzer
@@ -54,8 +57,6 @@ git log --oneline -10 --since="4 hours ago"
 ```
 
 ### Step 3: Determine Session Type
-
-Based on changes, classify:
 
 | Type | Indicators |
 |------|------------|
@@ -129,7 +130,6 @@ Analyze changes for:
 - **Problem:** What issue or need existed
 - **Existing Behavior:** How it worked before
 - **Pain Points:** What wasn't working well
-- **Metrics:** Relevant numbers before (if applicable)
 
 ---
 
@@ -138,7 +138,6 @@ Analyze changes for:
 - **Solution:** What was implemented
 - **New Behavior:** How it works now
 - **Improvements:** What's better
-- **Metrics:** Relevant numbers after (if applicable)
 
 ---
 
@@ -151,22 +150,6 @@ Analyze changes for:
 | Files deleted | Z |
 | Lines added | +N |
 | Lines removed | -M |
-
-#### Key Files Modified
-
-| File | Changes |
-|------|---------|
-| `path/to/file.ts` | Added feature X |
-| `path/to/other.ts` | Fixed bug Y |
-
----
-
-### Commits This Session
-
-```
-abc1234 feat: add feature X
-def5678 fix: resolve issue Y
-```
 
 ---
 
@@ -190,24 +173,4 @@ def5678 fix: resolve issue Y
 
 - [ ] Item that needs attention later
 - [ ] Improvement for future
-
----
-
-### Retrospective Draft Location
-
-Ready to create: `docs/retrospective/YYYY-MM/retrospective_YYYY-MM-DD_HHMMSS.md`
 ```
-
-## Integration
-
-- Runs before `/td` command
-- Feeds into retrospective template
-- Can trigger auto-capture
-- Updates activity log
-
-## Automation Tips
-
-- Use git timestamps for duration estimation
-- Extract issue numbers from branch/commits
-- Link to related PRs
-- Track file type distribution

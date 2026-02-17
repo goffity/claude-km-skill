@@ -1,5 +1,7 @@
 ---
-description: Extract patterns from learnings into knowledge base
+name: distill
+description: Synthesizes related learnings into reusable knowledge base patterns.
+argument-hint: "[topic-name]"
 ---
 
 # Distill - Extract Patterns & Lessons
@@ -91,7 +93,7 @@ description: Extract patterns from learnings into knowledge base
 | Option | Pros | Cons |
 |--------|------|------|
 | Option A | ... | ... |
-| **Chosen** ✓ | ... | ... |
+| **Chosen** | ... | ... |
 
 ### Why This Choice?
 

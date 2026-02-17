@@ -1,5 +1,8 @@
 ---
-description: Scan learnings and suggest topics to distill into knowledge base
+name: knowledge-curator
+description: Scans learnings and suggests topics ready for distillation into knowledge base.
+context: fork
+user-invocable: false
 ---
 
 # Knowledge Curator
@@ -26,10 +29,7 @@ Agent สำหรับ scan learnings และแนะนำ topics ที�
 ### Step 1: Scan Learnings Directory
 
 ```bash
-# List all learnings
 find docs/learnings -name "*.md" -type f | head -50
-
-# Count learnings per month
 find docs/learnings -name "*.md" | wc -l
 ```
 
@@ -62,7 +62,6 @@ A topic is ready for distill when:
 ### Step 5: Check Existing Knowledge Base
 
 ```bash
-# List existing knowledge base entries
 ls -la docs/knowledge-base/
 ```
 
@@ -89,40 +88,24 @@ Compare with candidates to avoid duplicates.
 
 ### Ready to Distill (3+ learnings)
 
-#### 1. [Topic Name] ⭐ High Priority
+#### 1. [Topic Name] - High Priority
 **Learnings:** 5 files
 **Pattern:** Brief description of the pattern
 
 | File | Date | Key Point |
 |------|------|-----------|
 | `HH.MM_slug.md` | YYYY-MM-DD | Key insight |
-| ... | ... | ... |
 
 **Suggested Distill Title:** `topic-name.md`
 **Suggested Tags:** tag1, tag2, tag3
 
 ---
 
-#### 2. [Topic Name] 🔶 Medium Priority
-[Similar format]
-
----
-
 ### Growing Topics (2 learnings)
-
-These topics need 1 more learning before distill:
 
 | Topic | Count | Latest |
 |-------|-------|--------|
 | [topic] | 2 | YYYY-MM-DD |
-
----
-
-### Existing Knowledge Base
-
-| Entry | Related Learnings | Last Updated |
-|-------|-------------------|--------------|
-| `topic.md` | 5 | YYYY-MM-DD |
 
 ---
 
@@ -139,48 +122,4 @@ Areas with learnings but no knowledge base entry:
 1. **Distill Now:** [topic] - has 5+ learnings
 2. **Watch:** [topic] - needs 1 more learning
 3. **Review:** [existing entry] - might need update
-```
-
-## Topic Extraction Patterns
-
-Look for these in learnings:
-
-### Technology Topics
-- Framework/library patterns
-- Language-specific idioms
-- Tool configurations
-- API patterns
-
-### Problem Domains
-- Error handling patterns
-- Performance optimization
-- Security practices
-- Testing strategies
-
-### Process Topics
-- Development workflows
-- Debugging techniques
-- Code review practices
-- Documentation patterns
-
-## Integration
-
-- Run weekly or bi-weekly
-- Feeds into `/distill` command
-- Complements `/improve` workflow
-- Track in activity log
-
-## Example Workflow
-
-```bash
-# 1. Run knowledge curation
-User: Scan my learnings and suggest what to distill
-
-# 2. Agent produces report with candidates
-
-# 3. User selects topic
-User: Let's distill the "error-handling" topic
-
-# 4. Use /distill command
-/distill error-handling
 ```
