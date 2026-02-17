@@ -1,5 +1,7 @@
 ---
-description: Clean up old auto-captured files with retention policy
+name: cleanup
+description: Cleans up old auto-captured files with configurable retention policy and archive support.
+argument-hint: "[days]"
 ---
 
 # Cleanup - Retention Policy Manager

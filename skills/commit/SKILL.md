@@ -1,5 +1,6 @@
 ---
-description: Create atomic commits from staged/unstaged changes
+name: commit
+description: Creates atomic commits by invoking TDG and commenting on related GitHub issues.
 ---
 
 # Atomic Commit
@@ -37,7 +38,7 @@ After commits are created, automatically comment on the related GitHub issue:
 
 ```bash
 gh issue comment <issue-number> --body "$(cat <<'EOF'
-## Implementation Update ✅
+## Implementation Update
 
 ### Changes Made
 [List files changed and what was modified]

@@ -1,5 +1,7 @@
 ---
-description: Generate weekly or monthly session summaries from retrospectives and activity logs
+name: summary
+description: Generates weekly or monthly session summaries from retrospectives and activity logs.
+argument-hint: "[weekly|monthly]"
 ---
 
 # Summary - Session Summaries

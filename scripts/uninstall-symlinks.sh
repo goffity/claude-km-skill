@@ -16,6 +16,21 @@ SKILLS=(
     recap
     distill
     improve
+    commit
+    pr
+    review
+    pr-review
+    pr-poll
+    cleanup
+    consolidate
+    summary
+    search
+    jira
+    example
+    flow
+    pattern
+    share
+    permission
     code-reviewer
     session-analyzer
     knowledge-curator

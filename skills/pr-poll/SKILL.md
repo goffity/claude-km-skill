@@ -1,5 +1,7 @@
 ---
-description: Manage PR review polling daemon for automatic notifications
+name: pr-poll
+description: Manages PR review polling daemon for automatic notifications and auto-respond.
+argument-hint: "[start|stop|auto|check|status]"
 ---
 
 # PR Poll - Automatic PR Review Notifications
@@ -60,7 +62,7 @@ description: Manage PR review polling daemon for automatic notifications
 
 **Output:**
 ```
-✓ Daemon started (PID: 12345)
+Daemon started (PID: 12345)
 
 Log file: ~/.pr-review-poll.log
 To view logs: tail -f ~/.pr-review-poll.log
@@ -83,9 +85,9 @@ WORKING_DIR=$(pwd)
 
 **Output:**
 ```
-✓ Daemon started (PID: 12345)
-🤖 Auto-respond: ENABLED
-📂 Working dir: /path/to/repo
+Daemon started (PID: 12345)
+Auto-respond: ENABLED
+Working dir: /path/to/repo
 
 Log file: ~/.pr-review-poll.log
 To view logs: tail -f ~/.pr-review-poll.log
@@ -111,7 +113,7 @@ To stop: ./pr-review-poll-stop.sh
 
 **Output:**
 ```
-✓ Daemon stopped
+Daemon stopped
 ```
 
 #### Check Once

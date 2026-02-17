@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILL_ROOT="$(dirname "$SCRIPT_DIR")"
 SKILLS_DIR="$HOME/.claude/skills"
 
-# All skills to symlink (6 user-invocable + 6 specialists)
+# All skills to symlink (21 user-invocable + 6 specialists)
 SKILLS=(
     mem
     focus
@@ -16,6 +16,21 @@ SKILLS=(
     recap
     distill
     improve
+    commit
+    pr
+    review
+    pr-review
+    pr-poll
+    cleanup
+    consolidate
+    summary
+    search
+    jira
+    example
+    flow
+    pattern
+    share
+    permission
     code-reviewer
     session-analyzer
     knowledge-curator

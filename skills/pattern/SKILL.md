@@ -1,5 +1,7 @@
 ---
-description: Document reusable design patterns with structure and examples
+name: pattern
+description: Documents reusable design patterns with structure, examples, and usage guidelines.
+argument-hint: "[name]"
 ---
 
 # Pattern - Design Pattern Library

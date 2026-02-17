@@ -1,5 +1,7 @@
 ---
-description: Document workflow diagrams and process flows with Mermaid support
+name: flow
+description: Documents workflow diagrams and process flows with Mermaid diagram support.
+argument-hint: "[name]"
 ---
 
 # Flow - Process Flow Documentation

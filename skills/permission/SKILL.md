@@ -1,5 +1,7 @@
 ---
-description: Manage Claude Code permissions - pre-allow safe commands to reduce prompts
+name: permission
+description: Manages Claude Code permissions by pre-allowing safe commands to reduce permission prompts.
+argument-hint: "[show|suggest|add]"
 ---
 
 # Permission Management
@@ -23,16 +25,16 @@ description: Manage Claude Code permissions - pre-allow safe commands to reduce 
 echo "=== Project Detection ==="
 
 # Check for package managers and build tools
-[ -f "package.json" ] && echo "📦 Node.js project detected"
-[ -f "bun.lockb" ] && echo "🍞 Bun detected"
-[ -f "pnpm-lock.yaml" ] && echo "📦 pnpm detected"
-[ -f "yarn.lock" ] && echo "🧶 Yarn detected"
-[ -f "go.mod" ] && echo "🐹 Go project detected"
-[ -f "Cargo.toml" ] && echo "🦀 Rust project detected"
-[ -f "requirements.txt" ] || [ -f "pyproject.toml" ] && echo "🐍 Python project detected"
-[ -f "Makefile" ] && echo "⚙️ Makefile detected"
-[ -f "docker-compose.yml" ] || [ -f "docker-compose.yaml" ] && echo "🐳 Docker Compose detected"
-[ -f "Dockerfile" ] && echo "🐳 Dockerfile detected"
+[ -f "package.json" ] && echo "Node.js project detected"
+[ -f "bun.lockb" ] && echo "Bun detected"
+[ -f "pnpm-lock.yaml" ] && echo "pnpm detected"
+[ -f "yarn.lock" ] && echo "Yarn detected"
+[ -f "go.mod" ] && echo "Go project detected"
+[ -f "Cargo.toml" ] && echo "Rust project detected"
+[ -f "requirements.txt" ] || [ -f "pyproject.toml" ] && echo "Python project detected"
+[ -f "Makefile" ] && echo "Makefile detected"
+[ -f "docker-compose.yml" ] || [ -f "docker-compose.yaml" ] && echo "Docker Compose detected"
+[ -f "Dockerfile" ] && echo "Dockerfile detected"
 
 echo ""
 echo "=== Current Settings ==="
@@ -372,13 +374,13 @@ Skill(skill-name)        # Allow skill
 {
   "permissions": {
     "allow": [
-      "Bash(npm run test:*)",     // npm run test with any args
-      "Bash(git push)",           // git push without args
-      "Bash(make:*)",             // make with any target
-      "Skill(tdg:atomic-commit)"  // allow specific skill
+      "Bash(npm run test:*)",
+      "Bash(git push)",
+      "Bash(make:*)",
+      "Skill(tdg:atomic-commit)"
     ],
     "deny": [
-      "Bash(rm -rf:*)"            // never allow rm -rf
+      "Bash(rm -rf:*)"
     ]
   }
 }

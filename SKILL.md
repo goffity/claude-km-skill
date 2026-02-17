@@ -25,24 +25,34 @@ user-invocable: false
 | `/recap` | - | Context summary | Start new session |
 | `/focus [task]` | - | Issue + branch | Set current task |
 
-## Secondary Commands (15 commands in .claude/commands/)
+## Git & PR Skills (user-invocable)
 
-| Command | Purpose |
-|---------|---------|
+| Skill | Purpose |
+|-------|---------|
 | `/commit` | Atomic commits via TDG |
 | `/pr` | Tests, build, review, create PR |
 | `/review` | Code review before push |
 | `/pr-review` | Handle PR review feedback |
 | `/pr-poll` | PR review notification daemon |
+
+## Knowledge & Docs Skills (user-invocable)
+
+| Skill | Purpose |
+|-------|---------|
 | `/cleanup` | Retention policy management |
 | `/consolidate` | Daily session file consolidation |
 | `/summary` | Weekly/monthly summaries |
 | `/search` | Search knowledge index |
-| `/jira` | Jira integration |
 | `/example` | Save code examples |
 | `/flow` | Process flow diagrams |
 | `/pattern` | Design pattern docs |
 | `/share` | Cross-project knowledge sharing |
+
+## Integration & Config Skills (user-invocable)
+
+| Skill | Purpose |
+|-------|---------|
+| `/jira` | Jira issue management |
 | `/permission` | Manage Claude Code permissions |
 
 ## Specialist Skills (context: fork, not user-invocable)

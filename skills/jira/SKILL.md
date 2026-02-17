@@ -1,5 +1,7 @@
 ---
-description: Jira integration - create, list, fetch, and manage Jira issues
+name: jira
+description: Manages Jira issues including creation, listing, transitions, and workflow integration.
+argument-hint: "[command] [arguments]"
 ---
 
 # Jira Integration
@@ -401,7 +403,7 @@ JIRA_PROJECT="PROJ"  # default project
 /jira create
 
 # Create Story/Epic with templates
-./scripts/jira-client.sh create-story PROJ "ระบบลดอัตราการจ่ายอัตโนมัติ" --labels Backend,Player --due 2026-02-14
+./scripts/jira-client.sh create-story PROJ "Feature summary" --labels Backend,Player --due 2026-02-14
 ./scripts/jira-client.sh create-epic PROJ "Big Feature Initiative" --labels Backend
 
 # Create subtasks with dependencies
@@ -419,29 +421,6 @@ JIRA_PROJECT="PROJ"  # default project
 /jira transitions PROJ-123  # see available transitions
 /jira transition PROJ-123 31  # 31 = Done (example ID)
 /jira comment PROJ-123 "Fixed the issue"
-```
-
-## Example Output: Creating Story with Subtasks
-
-```
-=== Created Issues ===
-
-PROJ-123 (Story): ระบบลดอัตราการจ่ายอัตโนมัติ
-├── Labels: Backend, Player, game
-├── Due: 2026-02-14
-└── Subtasks:
-    ├── PROJ-124: Phase 1: Data Models [Backend, Player]
-    │   └── Blocks: PROJ-125, PROJ-128
-    ├── PROJ-125: Phase 2: Win Processing [Backend]
-    │   ├── Blocked by: PROJ-124
-    │   └── Blocks: PROJ-126
-    ├── PROJ-126: Phase 3: Reduction Logic [Backend, Player]
-    │   ├── Blocked by: PROJ-125
-    │   └── Blocks: PROJ-127
-    ├── PROJ-127: Phase 4: Max Bet Reduction [Backend, game]
-    │   └── Blocked by: PROJ-126
-    └── PROJ-128: Phase 5: Admin UI [Backend, Backoffice]
-        └── Blocked by: PROJ-124
 ```
 
 ## Integration with Other Commands

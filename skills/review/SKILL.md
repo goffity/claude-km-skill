@@ -1,5 +1,6 @@
 ---
-description: Automated code review before push
+name: review
+description: Runs automated code review before push to catch bugs, security issues, and performance problems.
 ---
 
 # Code Review
@@ -67,7 +68,7 @@ Pass / Fail with reason"
 **ถ้ามี CRITICAL issues:**
 
 ```markdown
-## Code Review Failed ❌
+## Code Review Failed
 
 ### Critical Issues Found
 
@@ -84,7 +85,7 @@ Pass / Fail with reason"
 **ถ้าไม่มี CRITICAL issues:**
 
 ```markdown
-## Code Review Passed ✅
+## Code Review Passed
 
 ### Summary
 - Critical: 0
@@ -127,7 +128,7 @@ Code is ready for `/td` or manual push
 ### Example Output (Pass)
 
 ```markdown
-## Code Review Passed ✅
+## Code Review Passed
 
 ### Summary
 - Critical: 0
@@ -135,25 +136,25 @@ Code is ready for `/td` or manual push
 - Info: 3
 
 ### Warnings
-1. ⚠️ `internal/auth/service.go:45` - Missing error check on database call
-2. ⚠️ `internal/user/handler.go:78` - No input validation for email
+1. `internal/auth/service.go:45` - Missing error check on database call
+2. `internal/user/handler.go:78` - No input validation for email
 
 ### Info
-1. ℹ️ `internal/auth/service.go:12` - Consider using constants for magic numbers
-2. ℹ️ `internal/user/model.go:5` - Add godoc comment for exported type
-3. ℹ️ `tests/auth_test.go:30` - Consider adding edge case test
+1. `internal/auth/service.go:12` - Consider using constants for magic numbers
+2. `internal/user/model.go:5` - Add godoc comment for exported type
+3. `tests/auth_test.go:30` - Consider adding edge case test
 
-### Ready to Push ✅
+### Ready to Push
 ```
 
 ### Example Output (Fail)
 
 ```markdown
-## Code Review Failed ❌
+## Code Review Failed
 
 ### Critical Issues Found
 
-1. 🔴 `internal/db/query.go:23` - SQL Injection vulnerability
+1. `internal/db/query.go:23` - SQL Injection vulnerability
    ```go
    query := "SELECT * FROM users WHERE id = " + userId
    ```
@@ -163,7 +164,7 @@ Code is ready for `/td` or manual push
    db.Query(query, userId)
    ```
 
-2. 🔴 `config/secrets.go:5` - Hardcoded API key exposed
+2. `config/secrets.go:5` - Hardcoded API key exposed
    ```go
    const API_KEY = "sk-1234567890"
    ```

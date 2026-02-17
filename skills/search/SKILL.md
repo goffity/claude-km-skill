@@ -1,5 +1,7 @@
 ---
-description: Search knowledge base by title, tags, or content
+name: search
+description: Searches knowledge base by title, tags, or content across all knowledge artifacts.
+argument-hint: "[query]"
 ---
 
 # Search - Knowledge Search

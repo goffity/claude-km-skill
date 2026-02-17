@@ -1,5 +1,6 @@
 ---
-description: Consolidate auto-captured session files into daily summaries
+name: consolidate
+description: Consolidates auto-captured session files into daily summaries by grouping related sessions.
 ---
 
 # Consolidate - Session File Merger
